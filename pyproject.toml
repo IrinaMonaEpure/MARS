@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MSEAN"
+version = "0.1.0"
+description = "A Generative Model for Multilayer Spatially Embedded Affiliation-Based Network Data"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "python-igraph",
+    "networkx",
+    "pyyaml",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

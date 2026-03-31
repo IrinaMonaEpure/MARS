@@ -1,0 +1,35 @@
+seed: 42
+
+network:
+  n_nodes: 50                                 # N
+  n_layers: 3                                 # L
+  n_affiliations: [5, 10, 15]                 # K_l
+
+metric_space:                                 # S
+  square_side: 1
+  # TODO: vertices: [[0, 0], [0, 1], [1, 1], [1, 0]]
+  distance: euclidean                         # d
+
+embedding:
+  nodes: uniform                              # X_V
+  affiliations: uniform                       # X_A
+
+connection:
+  function: exponential_decay                 # gamma
+  xi: 1
+  r_0: 1
+  s: 1
+
+visualization:
+  plot_network: true
+  plot_degree_distribution: true
+
+output:
+  save_nodes: true
+  save_affiliations: true
+  save_affiliation_edges: true
+  save_node_edges: true
+  save_degree_distribution: true
+  run_name: null
+
+# TODO: batch runs (same parameters or parameter range)
