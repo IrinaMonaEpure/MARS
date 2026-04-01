@@ -34,3 +34,18 @@ def load_config(path):
     # required keys etc.)
 
     return Config(cfg)
+
+def save_config(cfg, path):
+    # TODO: Consider just copying file
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Convert back to plain dict
+    def to_dict(d):
+        if isinstance(d, dict):
+            return {k: to_dict(v) for k, v in d.items()}
+        return d
+
+    with path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(to_dict(cfg), f, sort_keys=False)

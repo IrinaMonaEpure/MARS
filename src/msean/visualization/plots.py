@@ -13,7 +13,7 @@ def plot_degree_dist(G:nx.Graph, show:bool = False):
         None
     """
     # Create a new figure for the degree distribution.
-    _ = plt.figure()
+    fig = plt.figure()
 
     # Plot the degree distribution
     degrees = [G.degree(n) for n in G.nodes()]
@@ -38,6 +38,8 @@ def plot_degree_dist(G:nx.Graph, show:bool = False):
 
     if show: plt.show()
 
+    return fig
+
 def plot_degree_dist_layers(layers:list, labels:list, show:bool = False):
     """
     Plots the degree distribution of each layer of a multiplex network as a line graph on a log-log scale.
@@ -51,7 +53,7 @@ def plot_degree_dist_layers(layers:list, labels:list, show:bool = False):
         None
     """
     # Create a new figure for the degree distributions of the layers.
-    _ = plt.figure()
+    fig = plt.figure()
 
     # Initialise lists to store the x and ys to plot for each layer.
     xs = []
@@ -89,6 +91,8 @@ def plot_degree_dist_layers(layers:list, labels:list, show:bool = False):
 
     if show: plt.show()
 
+    return fig
+
 def plot_embeddedness(G:nx.Graph, show:bool = False):
     """
     Plots the embeddedness distribution of edges in a network G. 
@@ -101,7 +105,7 @@ def plot_embeddedness(G:nx.Graph, show:bool = False):
         None
     """
     # Create a new figure for the degree distributions of the layers.
-    _ = plt.figure()
+    fig = plt.figure()
 
     # Calculate the embeddedness (triangle multiplicity) of each edge.
     gdeg = nx.generalized_degree(G)
@@ -127,3 +131,5 @@ def plot_embeddedness(G:nx.Graph, show:bool = False):
     plt.ylim(1, plt.ylim()[1])
 
     if show: plt.show()
+
+    return fig

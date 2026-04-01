@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+from msean.config import Config
+
 # Choosing an affiliation for a particular node - steps 2b
 
 def d(pos1, pos2, toroidal=False):
@@ -16,7 +18,7 @@ def d(pos1, pos2, toroidal=False):
         y_dist = min(y_dist, 1-y_dist)
     return math.sqrt(x_dist**2 + y_dist**2)
 
-def choose_affiliation(node_pos, affiliation_embedding, xi, r_0, s):
+def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.random.Generator):
     """
     i. Calculate the connection probability weighting based on the distance between u and every affiliation ai, gamma(d(u, ai))
 #   ii. Setting the probability of choosing ai to its weighting over the sum of all weightings, i.e. gamma(d(u, ai)) / Σ{j} gamma(d(u, aj))
@@ -27,13 +29,13 @@ def choose_affiliation(node_pos, affiliation_embedding, xi, r_0, s):
 
     for aff in affiliation_embedding:
         affiliation_pos = affiliation_embedding[aff]
-        w_dict[aff] = math.exp(- xi * ((d(node_pos, affiliation_pos)/r_0)**s))
+        w_dict[aff] = math.exp(- cfg.connection.xi * ((d(node_pos, affiliation_pos)/cfg.connection.r_0)**cfg.connection.s))
 
     Z = sum([w_dict[k] for k in w_dict])
 
     affs = [k for k in w_dict]
     probs = [w_dict[k]/Z for k in affs]
 
-    ai = np.random.choice(affs, p=probs)
+    ai = rng.choice(affs, p=probs)
 
     return ai

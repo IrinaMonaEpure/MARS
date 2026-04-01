@@ -1,5 +1,5 @@
 """MSEAN package."""
 
-from .config import load_config
+from .config import load_config, save_config
 
-__all__ = ["load_config"]
+__all__ = ["load_config", "save_config"]
