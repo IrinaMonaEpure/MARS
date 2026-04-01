@@ -18,7 +18,7 @@ def d(pos1, pos2, toroidal=False):
         y_dist = min(y_dist, 1-y_dist)
     return math.sqrt(x_dist**2 + y_dist**2)
 
-def choose_affiliation(node_pos, affiliation_embedding, cfg:Config):
+def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.random.Generator):
     """
     i. Calculate the connection probability weighting based on the distance between u and every affiliation ai, gamma(d(u, ai))
 #   ii. Setting the probability of choosing ai to its weighting over the sum of all weightings, i.e. gamma(d(u, ai)) / Σ{j} gamma(d(u, aj))
@@ -36,6 +36,6 @@ def choose_affiliation(node_pos, affiliation_embedding, cfg:Config):
     affs = [k for k in w_dict]
     probs = [w_dict[k]/Z for k in affs]
 
-    ai = np.random.choice(affs, p=probs)
+    ai = rng.choice(affs, p=probs)
 
     return ai

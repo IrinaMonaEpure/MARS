@@ -1,4 +1,5 @@
 import networkx as nx
+import numpy as np
 
 from msean.generation import distribute_nodes_uniformly, choose_affiliation
 from msean.config import Config
@@ -24,12 +25,12 @@ def gen(cfg:Config):
     #   xi (ξ), r_0 and s are the parameters in the connection function exp(-ξ*(d(u,v)/r_0)^s)
     #       This is the same as the connection function exp(-d(u,v)/r_0) if you let ξ=1, s=1
 
-    node_embedding = distribute_nodes_uniformly(cfg.network.n_nodes, cfg, label_prefix='u') # I add a prefix to node names so you don't get a node and affiliation called the same thing.
+    rng = np.random.default_rng(cfg.seed)
+    node_embedding = distribute_nodes_uniformly(cfg.network.n_nodes, cfg, rng, label_prefix='u') # I add a prefix to node names so you don't get a node and affiliation called the same thing.
 
     layers = []
-
     for l in range(cfg.network.n_layers):
-        affiliation_embedding = distribute_nodes_uniformly(cfg.network.n_affiliations[l], cfg, label_prefix='A')
+        affiliation_embedding = distribute_nodes_uniformly(cfg.network.n_affiliations[l], cfg, rng, label_prefix='A')
 
         # TODO In this one I generate a bipartite graph first, but I don't think you actually need that
         # I think you can go straight to the projected graph with only nodes and no affiliations.
@@ -39,7 +40,7 @@ def gen(cfg:Config):
         H.add_nodes_from(affiliation_embedding)
 
         for node in node_embedding:
-            ai = choose_affiliation(node_embedding[node], affiliation_embedding, cfg)
+            ai = choose_affiliation(node_embedding[node], affiliation_embedding, cfg, rng)
             H.add_edge(ai, node)
     
         Gl = nx.empty_graph()
