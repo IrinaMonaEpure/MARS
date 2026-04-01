@@ -1,8 +1,7 @@
 <h1 align="center">
-  MSEAN
+  <p>MSEAN</p>
+  <p>Multiplex Spatially Embedded Affiliation-Based Network</p>
 </h1>
-
-</br>
 
 <h2> Quick Start </h2>
 
