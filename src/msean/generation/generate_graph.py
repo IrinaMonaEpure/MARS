@@ -52,4 +52,4 @@ def gen(cfg:Config):
         layers.append(Gl)
     
     G = nx.compose_all(layers)
-    return G
+    return G, layers

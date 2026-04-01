@@ -1,9 +1,10 @@
 seed: 42
 
 network:
-  n_nodes: 5000                                 # N
+  n_nodes: 5000                               # N
   n_layers: 3                                 # L
-  n_affiliations: [250, 500, 750]                 # K_l
+  n_affiliations: [250, 500, 750]             # K_l
+  layer_labels: ['l1', 'l2', 'l3']
 
 metric_space:                                 # S
   square_side: 1
@@ -23,13 +24,16 @@ connection:
 visualization:
   plot_network: true
   plot_degree_distribution: true
+  show: False
 
 output:
-  save_nodes: true
-  save_affiliations: true
-  save_affiliation_edges: true
-  save_node_edges: true
-  save_degree_distribution: true
-  run_name: null
-
+  save_folder: null                           # if null, creates default time stamped folder in runs folder
+  plots:
+    degree_dist: true
+    degree_dist_layers: true
+    embededness: true
+    network_visualization: true
+    save: true
+    show: false
+  
 # TODO: batch runs (same parameters or parameter range)
