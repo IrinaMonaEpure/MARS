@@ -1,9 +1,9 @@
 seed: 42
 
 network:
-  n_nodes: 50                                 # N
+  n_nodes: 5000                                 # N
   n_layers: 3                                 # L
-  n_affiliations: [5, 10, 15]                 # K_l
+  n_affiliations: [250, 500, 750]                 # K_l
 
 metric_space:                                 # S
   square_side: 1
