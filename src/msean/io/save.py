@@ -18,6 +18,7 @@ def prepare_run_directory(cfg:Config):
             config.yaml
             graph.pkl
             plots/
+            csv_files/
 
     Returns:
         dict with paths
@@ -59,11 +60,14 @@ def prepare_run_directory(cfg:Config):
     run_dir.mkdir(parents=True, exist_ok=True)
     plots_dir = run_dir / "plots"
     plots_dir.mkdir(exist_ok=True)
+    csv_dir = run_dir / "csv_files"
+    csv_dir.mkdir(exist_ok=True)
 
     paths = {
         "run_dir": run_dir,
         "config": run_dir / "config.yaml",
         "plots": plots_dir,
+        "csv_files": csv_dir,
     }
 
     # TODO: save node/edge lists? network files?

@@ -20,18 +20,23 @@ if __name__ == "__main__":
     # Generate and save plots
 
     # Degree distribution
-    deg_fig = plot_degree_dist(G, show=cfg.output.plots.show)
-    if cfg.output.plots.save:
-        deg_fig.savefig(paths["plots"] / "degree_distribution.png")
+    if cfg.output.plots.degree_dist:
+        deg_fig, deg_df = plot_degree_dist(G, show=cfg.output.plots.show)
+        deg_df.to_csv(paths["csv_files"] / "degree_distribution.csv")
+        if cfg.output.plots.save:
+            deg_fig.savefig(paths["plots"] / "degree_distribution.png")
 
     # Degree distribution per layer
-    deg_layer_fig = plot_degree_dist_layers(layers, cfg.network.layer_labels, show=cfg.output.plots.show)
-    if cfg.output.plots.save:
-        deg_layer_fig.savefig(paths["plots"] / "degree_distribution_layers.png")
+    if cfg.output.plots.degree_dist_layers:
+        deg_layer_fig, deg_layer_dfs = plot_degree_dist_layers(layers, cfg.network.layer_labels, show=cfg.output.plots.show)
+        for i in range(len(layers)):
+            deg_layer_dfs[i].to_csv(paths["csv_files"] / f"degree_distribution_{cfg.network.layer_labels[i]}.csv")
+        if cfg.output.plots.save:
+            deg_layer_fig.savefig(paths["plots"] / "degree_distribution_layers.png")
 
     # Embededness
-    embed_fig = plot_embeddedness(G, show=cfg.output.plots.show)
-    if cfg.output.plots.save:
-        embed_fig.savefig(paths["plots"] / "embededness.png")
-
-    # TODO: Save degree distribution DataFrame in a csv file?
+    if cfg.output.plots.embededness:
+        embed_fig,embed_df = plot_embeddedness(G, show=cfg.output.plots.show)
+        embed_df.to_csv(paths["csv_files"] / "embededness.csv")
+        if cfg.output.plots.save:
+            embed_fig.savefig(paths["plots"] / "embededness.png")

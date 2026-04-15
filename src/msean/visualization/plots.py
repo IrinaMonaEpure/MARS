@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+from pandas import DataFrame, Series
 
 def plot_degree_dist(G:nx.Graph, show:bool = False):
     """
@@ -17,12 +18,20 @@ def plot_degree_dist(G:nx.Graph, show:bool = False):
 
     # Plot the degree distribution
     degrees = [G.degree(n) for n in G.nodes()]
+
     # Find the frequencies and bins from a histogram plot, but clears the histogram plot as we want a line graph instead.
-    freqs, bin_boundaries, _ = plt.hist(degrees) 
+    freqs, bin_boundaries, _ = plt.hist(degrees)
     plt.clf()
+
+    # Save data into DataFrame
+    df = DataFrame(data={"left_edge_bin": bin_boundaries[:-1],
+                         "right_edge_bin": bin_boundaries[1:],
+                         "frequency": freqs})    
+
     # Extract the midpoints of the bins of the histogram.
     bin_size = bin_boundaries[1] - bin_boundaries[0]
     bin_mps = [bin_boundaries[i] + 0.5*bin_size for i in range(len(freqs))]
+
     # Plot the frequencies against the midpoints.
     plt.plot(bin_mps, freqs, color='navy')
 
@@ -38,7 +47,7 @@ def plot_degree_dist(G:nx.Graph, show:bool = False):
 
     if show: plt.show()
 
-    return fig
+    return fig, df
 
 def plot_degree_dist_layers(layers:list, labels:list, show:bool = False):
     """
@@ -55,9 +64,10 @@ def plot_degree_dist_layers(layers:list, labels:list, show:bool = False):
     # Create a new figure for the degree distributions of the layers.
     fig = plt.figure()
 
-    # Initialise lists to store the x and ys to plot for each layer.
+    # Initialise lists to store the x and ys to plot for each layer, and DataFrames
     xs = []
     ys = []
+    dfs = []
 
     for G in layers:
         # Find the degree distribution.
@@ -68,6 +78,12 @@ def plot_degree_dist_layers(layers:list, labels:list, show:bool = False):
         freqs, bin_boundaries, _ = plt.hist(degrees)
         bin_size = bin_boundaries[1] - bin_boundaries[0]
         bin_mps = [bin_boundaries[i] + 0.5*bin_size for i in range(len(freqs))]
+
+        # Save layer data into a DataFrame
+        df = DataFrame(data={"left_edge_bin": bin_boundaries[:-1],
+                             "right_edge_bin": bin_boundaries[1:],
+                             "frequency": freqs})
+        dfs.append(df)
 
         # Add the midpoints and frequencies to a list 
         xs.append(bin_mps)
@@ -91,7 +107,7 @@ def plot_degree_dist_layers(layers:list, labels:list, show:bool = False):
 
     if show: plt.show()
 
-    return fig
+    return fig, dfs
 
 def plot_embeddedness(G:nx.Graph, show:bool = False):
     """
@@ -115,6 +131,12 @@ def plot_embeddedness(G:nx.Graph, show:bool = False):
     
     # Find the frequencies and bins from a histogram plot, but clear the histogram plot as we want a line graph instead.
     freqs, bin_boundaries, _ = plt.hist(triangle_multiplicity_hist) 
+
+    # Save data into DataFrame
+    df = DataFrame(data={"left_edge_bin": bin_boundaries[:-1],
+                         "right_edge_bin": bin_boundaries[1:],
+                         "frequency": freqs})
+
     plt.clf()
     # Extract the midpoints of the bins of the histogram.
     bin_size = bin_boundaries[1] - bin_boundaries[0]
@@ -132,4 +154,4 @@ def plot_embeddedness(G:nx.Graph, show:bool = False):
 
     if show: plt.show()
 
-    return fig
+    return fig, df
