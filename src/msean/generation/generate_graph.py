@@ -32,21 +32,18 @@ def gen(cfg:Config):
     for l in range(cfg.network.n_layers):
         affiliation_embedding = distribute_nodes_uniformly(cfg.network.n_affiliations[l], cfg, rng, label_prefix='A')
 
-        # TODO In this one I generate a bipartite graph first, but I don't think you actually need that
-        # I think you can go straight to the projected graph with only nodes and no affiliations.
-
-        H = nx.empty_graph()
-        H.add_nodes_from(node_embedding)
-        H.add_nodes_from(affiliation_embedding)
-
+        # Keep a dictionary with format {affiliation_index: [nodes_connected_to_affiliation]}
+        aff_connections = {}
         for node in node_embedding:
             ai = choose_affiliation(node_embedding[node], affiliation_embedding, cfg, rng)
-            H.add_edge(ai, node)
+            if ai in aff_connections:
+                aff_connections[ai].append(node)
+            else:
+                aff_connections[ai] = [node]
     
         Gl = nx.empty_graph()
-        for aff in affiliation_embedding:
-            clique = [u for u in H.neighbors(aff)]
-            Ki = nx.complete_graph(clique)
+        for ai in list(aff_connections.keys()):
+            Ki = nx.complete_graph(aff_connections[ai])
             Gl = nx.compose(Gl, Ki)
 
         layers.append(Gl)
