@@ -1,6 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from pandas import DataFrame, Series
+from pandas import DataFrame
 
 def plot_degree_dist(G:nx.Graph, show:bool = False):
     """
