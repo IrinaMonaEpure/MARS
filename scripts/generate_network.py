@@ -2,7 +2,7 @@ from pathlib import Path
 
 from msean import load_config, save_config
 from msean.generation import gen
-from msean.visualization.plots import plot_degree_dist, plot_degree_dist_layers, plot_embeddedness
+from msean.measurements.properties import get_degree_dist, get_degree_dist_layers, get_embeddedness
 from msean.io.save import prepare_run_directory
 
 if __name__ == "__main__":
@@ -20,17 +20,17 @@ if __name__ == "__main__":
     # Generate and save plots
 
     # Degree distribution
-    deg_fig = plot_degree_dist(G, show=cfg.output.plots.show)
+    deg_fig = get_degree_dist(G, show=cfg.output.plots.show)
     if cfg.output.plots.save:
         deg_fig.savefig(paths["plots"] / "degree_distribution.png")
 
     # Degree distribution per layer
-    deg_layer_fig = plot_degree_dist_layers(layers, cfg.network.layer_labels, show=cfg.output.plots.show)
+    deg_layer_fig = get_degree_dist_layers(layers, cfg.network.layer_labels, show=cfg.output.plots.show)
     if cfg.output.plots.save:
         deg_layer_fig.savefig(paths["plots"] / "degree_distribution_layers.png")
 
     # Embededness
-    embed_fig = plot_embeddedness(G, show=cfg.output.plots.show)
+    embed_fig = get_embeddedness(G, show=cfg.output.plots.show)
     if cfg.output.plots.save:
         embed_fig.savefig(paths["plots"] / "embededness.png")
 
