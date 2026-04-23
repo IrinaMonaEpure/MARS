@@ -3,19 +3,22 @@ import numpy as np
 
 from msean.config import Config
 
-# Choosing an affiliation for a particular node - steps 2b
 
-def d(pos1, pos2, toroidal=False):
-    """Euclidean distance"""
+def d(pos1, pos2, cfg:Config):
+    """
+    Compute the Euclidean distance between two points in 2D.
 
-    # TODO The toroidal stuff is the doughnut thing where it loops around if it goes over an edge... but I am not convinced we need this
+    If cfg.metric_space.toroidal is True, distances are computed on a square torus
+    with side length cfg.metric_space.square_side, meaning opposite edges wrap around.
+    """
     
     x_dist = abs(pos1[0]-pos2[0])
-    if toroidal:
-        x_dist = min(x_dist, 1-x_dist)
     y_dist = abs(pos1[1]-pos2[1])
-    if toroidal:
-        y_dist = min(y_dist, 1-y_dist)
+
+    if cfg.metric_space.toroidal:
+        x_dist = min(x_dist, cfg.metric_space.square_side - x_dist)
+        y_dist = min(y_dist, cfg.metric_space.square_side - y_dist)
+
     return math.sqrt(x_dist**2 + y_dist**2)
 
 def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.random.Generator):
@@ -61,7 +64,7 @@ def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.rando
 
     for aff in affiliation_embedding:
         affiliation_pos = affiliation_embedding[aff]
-        w_dict[aff] = math.exp(- cfg.connection.xi * ((d(node_pos, affiliation_pos)/cfg.connection.r_0)**cfg.connection.s))
+        w_dict[aff] = math.exp(- cfg.connection.xi * ((d(node_pos, affiliation_pos, cfg)/cfg.connection.r_0)**cfg.connection.s))
 
     Z = sum([w_dict[k] for k in w_dict])
 

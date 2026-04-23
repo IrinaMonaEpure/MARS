@@ -8,8 +8,8 @@ network:
 
 metric_space:                                 # S
   square_side: 1
-  # TODO: vertices: [[0, 0], [0, 1], [1, 1], [1, 0]]
   distance: euclidean                         # d
+  toroidal: False
 
 embedding:
   nodes: uniform                              # X_V
