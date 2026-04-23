@@ -76,6 +76,7 @@ def gen(cfg:Config):
                 Gl.add_edges_from(itertools.combinations(members, 2))
         
         layers.append(Gl)
-    
+
     G = nx.compose_all(layers)
+    nx.set_node_attributes(G, node_embedding, 'embedding')
     return G, layers

@@ -1,5 +1,8 @@
 import numpy as np
 import networkx as nx
+from msean.generation import d
+
+# Distributions
 
 def get_degree_dist(G:nx.Graph):
     """
@@ -16,7 +19,6 @@ def get_degree_dist(G:nx.Graph):
     
     return deg_dist
     
-
 def get_degree_dist_layers(layers: list):
     """
     Returns a list of degree distribution arrays, one per layer.
@@ -48,3 +50,58 @@ def get_embeddedness_dist(G: nx.Graph):
     freqs = np.array([triangle_multiplicity_dist[k] for k in vals])
 
     return np.column_stack((vals, freqs))
+
+def get_clustering_dist(G:nx.Graph, res:int=3):
+    """
+    Returns the local clustering coefficient distribution as a 2D numpy array:
+    [[clustering coefficient, frequency], ...]
+    Records the clustering coefficient up to res decimal places.
+    """
+    clus_dict = nx.clustering(G)
+    clus = [round(clus_dict[k], res) for k in clus_dict]
+    
+    # Count frequencies
+    unique_coefs, counts = np.unique(clus, return_counts=True)
+    
+    # Stack into 2D array
+    clus_dist = np.column_stack((unique_coefs, counts))
+    
+    return clus_dist
+
+def get_edge_len_dist(G:nx.Graph, res:int=3):
+    """
+    Returns the edge length distribution as a 2D numpy array:
+    [[edge length, frequency], ...]
+    Records the clustering coefficient up to res decimal places.
+    """
+    edge_len = [round(d(G.nodes[e[0]]['embedding'], G.nodes[e[1]]['embedding']), res) for e in G.edges()]
+    
+    # Count frequencies
+    unique_lens, counts = np.unique(edge_len, return_counts=True)
+    
+    # Stack into 2D array
+    edge_len_dist = np.column_stack((unique_lens, counts))
+    
+    return edge_len_dist
+
+
+
+# Global properties
+
+def get_density(G:nx.Graph):
+    """
+    Returns the density as float.
+    """
+    return nx.density(G)
+
+def get_clustering(G:nx.Graph):
+    """
+    Returns the global clustering coefficient.
+    """
+    return nx.transitivity(G)
+
+def get_avg_degree(G:nx.Graph):
+    """
+    Returns the average degree of the graph.
+    """
+    return np.mean([d for _, d in G.degree()])
