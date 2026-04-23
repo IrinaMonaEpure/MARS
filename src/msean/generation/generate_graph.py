@@ -50,6 +50,7 @@ def gen(cfg:Config):
             Gl = nx.compose(Gl, Ki)
 
         layers.append(Gl)
-    
+
     G = nx.compose_all(layers)
+    nx.set_node_attributes(G, node_embedding, 'embedding')
     return G, layers
