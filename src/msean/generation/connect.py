@@ -20,9 +20,41 @@ def d(pos1, pos2, toroidal=False):
 
 def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.random.Generator):
     """
-    i. Calculate the connection probability weighting based on the distance between u and every affiliation ai, gamma(d(u, ai))
-#   ii. Setting the probability of choosing ai to its weighting over the sum of all weightings, i.e. gamma(d(u, ai)) / Σ{j} gamma(d(u, aj))
-#   iii. Sampling one affiliation from the set of possible affiliations according to its probability.
+    Sample an affiliation for a node based on spatial proximity.
+
+    Each affiliation is assigned a weight according to an exponential decay
+    function of the distance between the node and the affiliation. These
+    weights are normalized to form a probability distribution, from which
+    a single affiliation is sampled.
+
+    The connection (weighting) function is:
+        gamma(d) = exp(-ξ * (d / r_0)^s)
+
+    where d is the Euclidean distance between the node and an affiliation.
+    When ξ = 1 and s = 1, this reduces to:
+        gamma(d) = exp(-d / r_0)
+
+    Parameters
+    ----------
+    node_pos : tuple[float, float]
+        The (x, y) position of the node in the embedding space.
+
+    affiliation_embedding : dict
+        Mapping from affiliation identifiers to their (x, y) positions.
+
+    cfg : Config
+        Configuration object containing connection parameters:
+            - cfg.connection.xi (ξ): decay strength
+            - cfg.connection.r_0: characteristic distance scale
+            - cfg.connection.s: shape parameter
+
+    rng : np.random.Generator
+        NumPy random number generator used for sampling.
+
+    Returns
+    -------
+    ai : hashable
+        The identifier of the sampled affiliation.
     """
 
     w_dict = {}
