@@ -14,6 +14,8 @@ dependencies = [
     "python-igraph",
     "networkx",
     "pyyaml",
+    "ipykernel",
+    "jupyter",
 ]
 
 [tool.setuptools.packages.find]
