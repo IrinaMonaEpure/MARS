@@ -6,7 +6,7 @@ from msean.generation import distribute_nodes_uniformly, choose_affiliation
 from msean.config import Config
 
 
-def gen(cfg:Config):
+def gen(cfg:Config, rng: np.random.Generator):
     """
     Generate a multilayer spatial affiliation network.
 
@@ -41,6 +41,7 @@ def gen(cfg:Config):
                 Number of affiliations K_l for each layer.
             - cfg.seed : int
                 Random seed for reproducibility.
+    rng: np.random.Generator
 
     Returns
     -------
@@ -52,9 +53,7 @@ def gen(cfg:Config):
         before aggregation.
     """
 
-    rng = np.random.default_rng(cfg.seed)
-    # I add a prefix to node names so you don't get a node and affiliation called the same thing.
-    node_embedding = distribute_nodes_uniformly(cfg.network.n_nodes, cfg, rng, label_prefix='u')
+    node_embedding = distribute_nodes_uniformly(cfg.network.n_nodes, cfg, rng, label_prefix='u') # I add a prefix to node names so you don't get a node and affiliation called the same thing.
     node_labels = list(node_embedding.keys())
     layers = []
 
