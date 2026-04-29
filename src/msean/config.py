@@ -3,7 +3,7 @@ import yaml
 
 
 class Config(dict):
-    """Stores sonfiguration parameters"""
+    """Stores configuration parameters"""
 
     def __getattr__(self, key):
         """Ensures dot access (config.a.b instead of config['a']['b'])"""
@@ -18,6 +18,11 @@ class Config(dict):
             self[key] = value
 
         return value
+    
+    def __setattr__(self, key, value):
+        """Allows parameter update: cfg.connection.xi = 0.5"""
+
+        self[key] = value
     
 
 def load_config(path):
@@ -49,3 +54,14 @@ def save_config(cfg, path):
 
     with path.open("w", encoding="utf-8") as f:
         yaml.safe_dump(to_dict(cfg), f, sort_keys=False)
+
+def set_nested(cfg, path, value):
+    """Allows nested parameter update: set_nested(cfg, "connection.xi", 0.5)"""
+
+    keys = path.split(".")
+    obj = cfg
+
+    for k in keys[:-1]:
+        obj = getattr(obj, k)
+
+    setattr(obj, keys[-1], value)
