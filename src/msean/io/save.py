@@ -90,6 +90,9 @@ def prepare_run_directory(cfg:Config, parent_dir: Path | None = None, run_name: 
     """
     Creates a run directory either inside runs/ or inside a batch parent folder.
     """
+    
+    if parent_dir is None:
+        parent_dir = _get_runs_dir()
 
     if run_name is None:
         if getattr(cfg.output, "run_name", None):
