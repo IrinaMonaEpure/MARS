@@ -75,7 +75,7 @@ def batch_experiment(cfg: Config, rng: np.random.Generator, param_name: str, par
             List of properties to compute for each generated graph.
 
     Returns:
-        dict:
+        results: dict
             Nested dictionary of results with structure:
                 {
                     param_val_1: {
@@ -90,15 +90,12 @@ def batch_experiment(cfg: Config, rng: np.random.Generator, param_name: str, par
                     },
                     ...
                 }
+                where:
+                    - Keys are parameter values (ints from the specified range)
+                    - Values are dictionaries mapping PropertyEnum → computed result
 
-            where:
-                - Keys are parameter values (ints from the specified range)
-                - Values are dictionaries mapping PropertyEnum → computed result
-
-            Property output formats depend on the property:
-                - Distributions → numpy arrays of shape (n, 2)
-                - Scalar properties → float
-                - Layered distributions → list of numpy arrays
+            batch_paths: dict
+                See output format of msean.io.save.prepare_batch_directory(cfg).
     """
 
     # Prepare batch (parent) output directory
