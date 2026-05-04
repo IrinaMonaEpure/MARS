@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from copy import deepcopy
+from pathlib import Path
 import numpy as np
 
 from msean.measurements import (
@@ -30,7 +31,7 @@ PROPERTY_CALL = {
     PropertyEnum.AVERAGE_DEGREE: get_avg_degree
 }
 
-def batch_experiment(cfg: Config, rng: np.random.Generator, param_name: str, param_range: Tuple[int, int, int], properties: List[PropertyEnum]):
+def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_range: Tuple[int, int, int], properties: List[PropertyEnum]):
     """
     Runs a batch experiment by varying a single configuration parameter over a specified range,
     generating a graph for each parameter value, and computing selected properties.
@@ -63,6 +64,8 @@ def batch_experiment(cfg: Config, rng: np.random.Generator, param_name: str, par
     Arguments:
         cfg (Config):
             Base configuration object.
+        parent_dir (Path):
+            Folder where output files should be saved.
         rng(np.random.Generator):
             Random number generator.
         param_name (str):
@@ -99,7 +102,7 @@ def batch_experiment(cfg: Config, rng: np.random.Generator, param_name: str, par
     """
 
     # Prepare batch (parent) output directory
-    batch_paths = prepare_batch_directory(cfg)
+    batch_paths = prepare_batch_directory(parent_dir)
     save_config(cfg, batch_paths["config"])
 
     results = {}
@@ -117,7 +120,6 @@ def batch_experiment(cfg: Config, rng: np.random.Generator, param_name: str, par
         # Prepare run directory inside batch directory 
         run_name = f"{short_param_name}_{param_val}"
         run_paths = prepare_run_directory(
-            cfg_i,
             parent_dir=batch_paths["batch_dir"],
             run_name=run_name
         )

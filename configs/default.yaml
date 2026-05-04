@@ -27,7 +27,6 @@ visualization:
   show: False
 
 output:
-  save_folder: null                           # if null, creates default time stamped folder in runs folder
   plots:
     degree_dist: true
     degree_dist_layers: true
@@ -36,4 +35,4 @@ output:
     save: true
     show: false
   
-# TODO: batch runs (same parameters or parameter range)
+# TODO: multiple runs
