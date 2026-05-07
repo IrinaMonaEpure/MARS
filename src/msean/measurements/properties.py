@@ -38,7 +38,7 @@ def get_degree_dist_layers(layers: list):
     Each array has shape (n_unique_degrees, 2):
     [[degree, frequency], ...]
     """
-    return [get_degree_dist(G) for G in layers]
+    return [get_degree_dist(layer) for layer in layers]
 
 def get_embeddedness_dist(G: nx.Graph):
     """

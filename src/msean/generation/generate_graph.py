@@ -6,6 +6,18 @@ from msean.generation import distribute_nodes_uniformly, choose_affiliation
 from msean.config import Config
 
 
+def generate_n_graphs(cfg:Config, rng:np.random.Generator):
+    n_graphs = cfg.n_runs
+    G_list, layers_list = [], []
+
+    for _ in range(n_graphs):
+        G, layers = gen(cfg, rng)
+        G_list.append(G)
+        layers_list.append(layers)
+
+    return G_list, layers_list
+
+
 def gen(cfg:Config, rng: np.random.Generator):
     """
     Generate a multilayer spatial affiliation network.
