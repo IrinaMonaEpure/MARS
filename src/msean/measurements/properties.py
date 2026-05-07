@@ -1,6 +1,19 @@
+from enum import Enum
+
 import numpy as np
 import networkx as nx
 from msean.generation import d
+
+class PropertyEnum(Enum):
+    DEGREE_DISTRIBUTION = 1
+    DEGREE_DISTRIBUTION_PER_LAYER = 2
+    EMBEDDEDNESS_DISTRIBUTION = 3
+    CLUSTERING_DISTRIBUTION = 4
+    EDGE_LENGTH_DISTRIBUTION = 5
+    DENSITY = 6
+    CLUSTERING = 7
+    AVERAGE_DEGREE = 8
+
 
 # Distributions
 
@@ -25,7 +38,7 @@ def get_degree_dist_layers(layers: list):
     Each array has shape (n_unique_degrees, 2):
     [[degree, frequency], ...]
     """
-    return [get_degree_dist(G) for G in layers]
+    return [get_degree_dist(layer) for layer in layers]
 
 def get_embeddedness_dist(G: nx.Graph):
     """

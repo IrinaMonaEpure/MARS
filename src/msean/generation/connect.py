@@ -3,33 +3,68 @@ import numpy as np
 
 from msean.config import Config
 
-# Choosing an affiliation for a particular node - steps 2b
 
-def d(pos1, pos2, toroidal=False):
-    """Euclidean distance"""
+def d(pos1, pos2, cfg:Config):
+    """
+    Compute the Euclidean distance between two points in 2D.
 
-    # TODO The toroidal stuff is the doughnut thing where it loops around if it goes over an edge... but I am not convinced we need this
+    If cfg.metric_space.toroidal is True, distances are computed on a square torus
+    with side length cfg.metric_space.square_side, meaning opposite edges wrap around.
+    """
     
     x_dist = abs(pos1[0]-pos2[0])
-    if toroidal:
-        x_dist = min(x_dist, 1-x_dist)
     y_dist = abs(pos1[1]-pos2[1])
-    if toroidal:
-        y_dist = min(y_dist, 1-y_dist)
+
+    if cfg.metric_space.toroidal:
+        x_dist = min(x_dist, cfg.metric_space.square_side - x_dist)
+        y_dist = min(y_dist, cfg.metric_space.square_side - y_dist)
+
     return math.sqrt(x_dist**2 + y_dist**2)
 
 def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.random.Generator):
     """
-    i. Calculate the connection probability weighting based on the distance between u and every affiliation ai, gamma(d(u, ai))
-#   ii. Setting the probability of choosing ai to its weighting over the sum of all weightings, i.e. gamma(d(u, ai)) / Σ{j} gamma(d(u, aj))
-#   iii. Sampling one affiliation from the set of possible affiliations according to its probability.
+    Sample an affiliation for a node based on spatial proximity.
+
+    Each affiliation is assigned a weight according to an exponential decay
+    function of the distance between the node and the affiliation. These
+    weights are normalized to form a probability distribution, from which
+    a single affiliation is sampled.
+
+    The connection (weighting) function is:
+        gamma(d) = exp(-ξ * (d / r_0)^s)
+
+    where d is the Euclidean distance between the node and an affiliation.
+    When ξ = 1 and s = 1, this reduces to:
+        gamma(d) = exp(-d / r_0)
+
+    Parameters
+    ----------
+    node_pos : tuple[float, float]
+        The (x, y) position of the node in the embedding space.
+
+    affiliation_embedding : dict
+        Mapping from affiliation identifiers to their (x, y) positions.
+
+    cfg : Config
+        Configuration object containing connection parameters:
+            - cfg.connection.xi (ξ): decay strength
+            - cfg.connection.r_0: characteristic distance scale
+            - cfg.connection.s: shape parameter
+
+    rng : np.random.Generator
+        NumPy random number generator used for sampling.
+
+    Returns
+    -------
+    ai : hashable
+        The identifier of the sampled affiliation.
     """
 
     w_dict = {}
 
     for aff in affiliation_embedding:
         affiliation_pos = affiliation_embedding[aff]
-        w_dict[aff] = math.exp(- cfg.connection.xi * ((d(node_pos, affiliation_pos)/cfg.connection.r_0)**cfg.connection.s))
+        w_dict[aff] = math.exp(- cfg.connection.xi * ((d(node_pos, affiliation_pos, cfg)/cfg.connection.r_0)**cfg.connection.s))
 
     Z = sum([w_dict[k] for k in w_dict])
 
