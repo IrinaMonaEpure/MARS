@@ -46,7 +46,7 @@ DISTRIBUTION_PROPERTY = [
     PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
 ]
 
-def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_range: Tuple[int, int, int], properties: List[PropertyEnum]):
+def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_range: Tuple[float, float, float], properties: List[PropertyEnum]):
     """
     Runs a batch experiment by varying a single configuration parameter over a specified range,
     generating a graph for each parameter value, and computing selected properties.
@@ -124,7 +124,7 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
 
     # List of parameter values
     start, stop, step = param_range
-    param_values = range(start, stop + step, step) # the limits are inclusive
+    param_values = list(np.arange(start, stop + step, step)) # the limits are inclusive
 
     short_param_name = param_name.split(".")[-1]
 

@@ -58,7 +58,7 @@ def prepare_batch_directory(parent_dir: Path, experiment_name: str | None = None
             }
     """
     if experiment_name is None:
-        experiment_name = _next_dated_name(parent_dir)
+        experiment_name = _next_dated_name(parent_dir, suffix="batch")
 
     batch_dir = parent_dir / experiment_name
     batch_dir.mkdir(parents=True, exist_ok=True)

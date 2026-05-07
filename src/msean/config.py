@@ -1,5 +1,6 @@
 from pathlib import Path
 import yaml
+import numpy as np
 
 
 class Config(dict):
@@ -63,5 +64,8 @@ def set_nested(cfg, path, value):
 
     for k in keys[:-1]:
         obj = getattr(obj, k)
+
+    if isinstance(value, np.float64):
+        value = value.item()
 
     setattr(obj, keys[-1], value)
