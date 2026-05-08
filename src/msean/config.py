@@ -67,5 +67,7 @@ def set_nested(cfg, path, value):
 
     if isinstance(value, np.float64):
         value = value.item()
+    elif isinstance(value, np.int64):
+        value = value.item()
 
     setattr(obj, keys[-1], value)
