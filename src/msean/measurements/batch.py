@@ -38,7 +38,7 @@ GLOBAL_PROPERTIES = [
     PropertyEnum.AVERAGE_DEGREE
 ]
 
-DISTRIBUTION_PROPERTY = [
+DISTRIBUTION_PROPERTIES = [
     PropertyEnum.DEGREE_DISTRIBUTION,
     PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER,
     PropertyEnum.EMBEDDEDNESS_DISTRIBUTION,
@@ -46,7 +46,7 @@ DISTRIBUTION_PROPERTY = [
     PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
 ]
 
-def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_range: Tuple[float, float, float], properties: List[PropertyEnum]):
+def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_values: List, properties: List[PropertyEnum]):
     """
     Runs a batch experiment by varying a single configuration parameter over a specified range,
     generating a graph for each parameter value, and computing selected properties.
@@ -86,9 +86,8 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
         param_name (str):
             Name of the parameter to vary, using dot notation
             (e.g., "connection.xi").
-        param_range (Tuple[int, int, int]):
-            (start, stop, step) defining the range of parameter values.
-            The range is inclusive: range(start, stop + step, step)
+        param_vals (List):
+            List of parameter values.
         properties (List[PropertyEnum]):
             List of properties to compute for each generated graph.
 
@@ -122,10 +121,6 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
 
     results = {}
 
-    # List of parameter values
-    start, stop, step = param_range
-    param_values = list(np.arange(start, stop + step, step)) # the limits are inclusive
-
     short_param_name = param_name.split(".")[-1]
 
     for param_val in param_values:
@@ -143,25 +138,24 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
 
         G_list, layers_list = generate_n_graphs(cfg_i, rng)
 
-        param_results = measure_properties(G_list, layers_list, properties)
+        param_results = measure_properties(G_list, layers_list, cfg_i, properties)
         results[param_val] = param_results
 
     return results, batch_paths
 
-def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], properties: List[PropertyEnum]):
+def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], cfg: Config, properties: List[PropertyEnum]):
     # replace for prop in properties, return dict results[param_val]
 
     param_results = {}
 
-    for prop in properties: #
-        # Degree distribution per layer requires individual layers as input
-        # TODO: Rather split over distribution/global?
+    for prop in properties:
         if prop == PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER:
-            aggregate_value = aggregate_distribution_per_layer(layers_list, prop) #TODO: set resolution if needed
+            # Degree distribution per layer requires individual layers as input
+            aggregate_value = aggregate_distribution_per_layer(layers_list, prop)
         elif prop in GLOBAL_PROPERTIES:
             aggregate_value = aggregate_global_property(G_list, prop)
-        elif prop in DISTRIBUTION_PROPERTY:
-            aggregate_value = aggregate_distribution(G_list, prop) #TODO: set resolution if needed
+        elif prop in DISTRIBUTION_PROPERTIES:
+            aggregate_value = aggregate_distribution(G_list, cfg, prop)
         else:
             raise ValueError(f"Unknown property: {prop}")
 
@@ -179,26 +173,34 @@ def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
 
     return np.mean(values)
 
-def aggregate_distribution(G_list: List[nx.Graph], property: PropertyEnum, resolution: float = 1.0):
-    # flatten to long sparse 1D np arrays, start from minimum and end at maximum element from deg_dist result left column
-    # then add them and divide by num runs
+def aggregate_distribution(G_list: List[nx.Graph], cfg: Config, property: PropertyEnum, resolution: float = None):
+    if resolution is None:
+        if property in [PropertyEnum.CLUSTERING_DISTRIBUTION, PropertyEnum.EDGE_LENGTH_DISTRIBUTION]:
+            # Range is between 0 and 1
+            resolution = 0.05
+        else:
+            resolution = 1.0
 
     distributions = []
     for G in G_list:
-        distributions.append(PROPERTY_CALL[property](G))
+        if property == PropertyEnum.EDGE_LENGTH_DISTRIBUTION:
+            # Passing cfg to specify whether toroidal (and if so, what is the metric space size)
+            distributions.append(PROPERTY_CALL[property](G, cfg))
+        else:
+            distributions.append(PROPERTY_CALL[property](G))
 
     aggregated_distribution = combine_distributions(distributions, resolution)
 
     return aggregated_distribution
 
-def combine_distributions(distributions: List[np.array], resolution: float = 1.0):
+def combine_distributions(distributions: List[np.array], resolution: float):
     # Calculate the minimum and maximum value over all distributions
     min_val = min(arr[:, 0].min() for arr in distributions)
     max_val = max(arr[:, 0].max() for arr in distributions)
 
     # Create a new range of values (Add buffer so out of range values still map safely)
     vals = np.arange(
-        min_val - resolution,
+        min_val,
         max_val + 2 * resolution,
         resolution
     )
@@ -214,7 +216,7 @@ def combine_distributions(distributions: List[np.array], resolution: float = 1.0
 
     return result
 
-def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum):
+def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 1.0):
     distribution_sets = []
     for layer_set in layers_list:
         distribution_sets.append(PROPERTY_CALL[property](layer_set))
@@ -222,7 +224,7 @@ def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property
     distribution_per_layer = []
 
     for i in range(len(distribution_sets[0])):
-        distribution_per_layer.append(combine_distributions([layer_set[i] for layer_set in distribution_sets]))
+        distribution_per_layer.append(combine_distributions([layer_set[i] for layer_set in distribution_sets], resolution))
 
     return distribution_per_layer
 

@@ -1,8 +1,9 @@
 from enum import Enum
-
 import numpy as np
 import networkx as nx
+
 from msean.generation import d
+from msean.config import Config
 
 class PropertyEnum(Enum):
     DEGREE_DISTRIBUTION = 1
@@ -81,13 +82,13 @@ def get_clustering_dist(G:nx.Graph, res:int=3):
     
     return clus_dist
 
-def get_edge_len_dist(G:nx.Graph, res:int=3):
+def get_edge_len_dist(G:nx.Graph, cfg: Config, res:int=3):
     """
     Returns the edge length distribution as a 2D numpy array:
     [[edge length, frequency], ...]
-    Records the clustering coefficient up to res decimal places.
+    Records the edge length up to res decimal places.
     """
-    edge_len = [round(d(G.nodes[e[0]]['embedding'], G.nodes[e[1]]['embedding']), res) for e in G.edges()]
+    edge_len = [round(d(G.nodes[e[0]]['embedding'], G.nodes[e[1]]['embedding'], cfg), res) for e in G.edges()]
     
     # Count frequencies
     unique_lens, counts = np.unique(edge_len, return_counts=True)
