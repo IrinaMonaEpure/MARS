@@ -20,7 +20,6 @@ from msean.config import Config, set_nested, save_config
 from msean.generation import generate_n_graphs
 from msean.io.save import prepare_batch_directory, prepare_run_directory
 
-# TODO: Specify type of property: per layer or not
 PROPERTY_CALL = {
     PropertyEnum.DEGREE_DISTRIBUTION: get_degree_dist,
     PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER: get_degree_dist_layers,
@@ -171,7 +170,7 @@ def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
         values.append(PROPERTY_CALL[property](G))
     values = np.array(values)
 
-    return np.mean(values)
+    return np.mean(values), np.std(values)
 
 def aggregate_distribution(G_list: List[nx.Graph], cfg: Config, property: PropertyEnum, resolution: float = None):
     if resolution is None:
@@ -189,9 +188,9 @@ def aggregate_distribution(G_list: List[nx.Graph], cfg: Config, property: Proper
         else:
             distributions.append(PROPERTY_CALL[property](G))
 
-    aggregated_distribution = combine_distributions(distributions, resolution)
+    aggregated_distribution, aggregated_std = combine_distributions(distributions, resolution)
 
-    return aggregated_distribution
+    return aggregated_distribution, aggregated_std
 
 def combine_distributions(distributions: List[np.array], resolution: float):
     # Calculate the minimum and maximum value over all distributions
@@ -212,9 +211,10 @@ def combine_distributions(distributions: List[np.array], resolution: float):
     ])
 
     mean_freqs = flat_arrays.mean(axis=0)
-    result = np.column_stack((vals, mean_freqs))
+    std_freqs = flat_arrays.std(axis=0)
+    result = np.column_stack((vals, mean_freqs, std_freqs))
 
-    return result
+    return result, std_freqs
 
 def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 1.0):
     distribution_sets = []
