@@ -11,6 +11,7 @@ from msean.measurements import (
     get_embeddedness_dist,
     get_clustering_dist,
     get_edge_len_dist,
+    get_excess_closure_dist,
     get_density,
     get_clustering,
     get_avg_degree,
@@ -26,6 +27,7 @@ PROPERTY_CALL = {
     PropertyEnum.EMBEDDEDNESS_DISTRIBUTION: get_embeddedness_dist,
     PropertyEnum.CLUSTERING_DISTRIBUTION: get_clustering_dist,
     PropertyEnum.EDGE_LENGTH_DISTRIBUTION: get_edge_len_dist,
+    PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION: get_excess_closure_dist,
     PropertyEnum.DENSITY: get_density,
     PropertyEnum.CLUSTERING: get_clustering,
     PropertyEnum.AVERAGE_DEGREE: get_avg_degree
@@ -43,6 +45,7 @@ DISTRIBUTION_PROPERTIES = [
     PropertyEnum.EMBEDDEDNESS_DISTRIBUTION,
     PropertyEnum.CLUSTERING_DISTRIBUTION,
     PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
+    PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION
 ]
 
 def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_values: List, properties: List[PropertyEnum]):

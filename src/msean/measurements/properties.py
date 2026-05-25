@@ -1,6 +1,7 @@
 from enum import Enum
 import numpy as np
 import networkx as nx
+from typing import List
 
 from msean.generation import d
 from msean.config import Config
@@ -11,9 +12,10 @@ class PropertyEnum(Enum):
     EMBEDDEDNESS_DISTRIBUTION = 3
     CLUSTERING_DISTRIBUTION = 4
     EDGE_LENGTH_DISTRIBUTION = 5
-    DENSITY = 6
-    CLUSTERING = 7
-    AVERAGE_DEGREE = 8
+    EXCESS_CLOSURE_DISTRIBUTION = 6
+    DENSITY = 7
+    CLUSTERING = 8
+    AVERAGE_DEGREE = 9
 
 
 # Distributions
@@ -33,7 +35,7 @@ def get_degree_dist(G:nx.Graph):
     
     return deg_dist
     
-def get_degree_dist_layers(layers: list):
+def get_degree_dist_layers(layers:List[nx.Graph]):
     """
     Returns a list of degree distribution arrays, one per layer.
     Each array has shape (n_unique_degrees, 2):
@@ -41,7 +43,7 @@ def get_degree_dist_layers(layers: list):
     """
     return [get_degree_dist(layer) for layer in layers]
 
-def get_embeddedness_dist(G: nx.Graph):
+def get_embeddedness_dist(G:nx.Graph):
     """
     Returns the embeddedness distribution as a 2D numpy array:
     [[embeddedness, frequency], ...]
@@ -98,6 +100,49 @@ def get_edge_len_dist(G:nx.Graph, cfg: Config, res:int=3):
     
     return edge_len_dist
 
+def get_excess_closure_dist(G:nx.Graph, layers:List[nx.Graph], res:int=3):
+    node_labels = list(G.nodes())
+    print("node_labels", node_labels)
+
+    T_pure = _T_pure(layers, node_labels)
+    T_unique = _T(G, node_labels)
+    p = _P(G, layers, node_labels)
+
+    print("T_pure", T_pure)
+    print("T_unique", T_unique)
+    print("p", p)
+
+    c_pure = np.divide(
+        T_pure,
+        p,
+        out=np.zeros_like(T_pure, dtype=float)
+    )
+    c_unique = np.divide(
+        T_unique,
+        p,
+        out=np.zeros_like(T_unique, dtype=float)
+    )
+    c_excess = np.divide(
+        c_unique - c_pure,
+        1 - c_pure,
+        out=np.zeros_like(c_unique),
+        where=c_unique != c_pure,
+    )
+
+    print("c_pure", c_pure)
+    print("c_unique", c_unique)
+    print("c_excess", c_excess)
+
+
+    np.round(c_excess, decimals=res, out=c_excess)
+
+    # Count frequencies
+    val, freq = np.unique(c_excess, return_counts=True)
+    
+    # Stack into 2D array
+    c_excess_dist = np.column_stack((val, freq))
+    
+    return c_excess_dist
 
 
 # Global properties
@@ -119,3 +164,46 @@ def get_avg_degree(G:nx.Graph):
     Returns the average degree of the graph.
     """
     return np.mean([d for _, d in G.degree()])
+
+
+# Utils for excess closure
+
+def _T(G:nx.Graph, node_labels:List[str]):
+    """
+    Return array of numbers of triangles around each node in node_labels.
+    """
+    triangles = nx.triangles(G)
+    print("triangles", triangles)
+
+    return np.array(
+        [triangles[node] for node in node_labels],
+        dtype=int
+    )
+
+def _T_pure(layers:List[nx.Graph], node_labels:List[str]):
+    """
+    Sum of _T over all individual layers.
+    """
+    T_pure = np.zeros(len(node_labels), dtype=int)
+
+    for l in layers:
+        T_pure += _T(l, node_labels)
+
+    return T_pure
+
+def _P(G:nx.Graph, layers:List[nx.Graph], node_labels:List[str]):
+    """
+    Array containing the number of possible different alter tie pairs around each node.
+    """
+    k = np.array([d for _, d in G.degree()])
+    binom_k_2 = k * (k - 1) / 2
+
+    n = len(node_labels)
+    sum_Al = np.zeros((n, n), dtype=int)
+    for l in layers:
+        sum_Al += nx.to_numpy_array(l, nodelist=node_labels, dtype=int)
+
+    binom_sumAl_2 = sum_Al * (sum_Al - 1) / 2
+    sum_binom_sumAl_2 = binom_sumAl_2.sum(axis=0)
+
+    return binom_k_2 - sum_binom_sumAl_2
