@@ -67,7 +67,7 @@ def get_embeddedness_dist(G:nx.Graph):
 
     return np.column_stack((vals, freqs))
 
-def get_clustering_dist(G:nx.Graph, res:int=3):
+def get_clustering_dist(G:nx.Graph, res:int=2):
     """
     Returns the local clustering coefficient distribution as a 2D numpy array:
     [[clustering coefficient, frequency], ...]
@@ -84,7 +84,7 @@ def get_clustering_dist(G:nx.Graph, res:int=3):
     
     return clus_dist
 
-def get_edge_len_dist(G:nx.Graph, cfg: Config, res:int=3):
+def get_edge_len_dist(G:nx.Graph, cfg: Config, res:int=2):
     """
     Returns the edge length distribution as a 2D numpy array:
     [[edge length, frequency], ...]
@@ -100,17 +100,12 @@ def get_edge_len_dist(G:nx.Graph, cfg: Config, res:int=3):
     
     return edge_len_dist
 
-def get_excess_closure_dist(G:nx.Graph, layers:List[nx.Graph], res:int=3):
+def get_excess_closure_dist(G:nx.Graph, layers:List[nx.Graph], res:int=2):
     node_labels = list(G.nodes())
-    print("node_labels", node_labels)
 
     T_pure = _T_pure(layers, node_labels)
     T_unique = _T(G, node_labels)
     p = _P(G, layers, node_labels)
-
-    print("T_pure", T_pure)
-    print("T_unique", T_unique)
-    print("p", p)
 
     c_pure = np.divide(
         T_pure,
@@ -126,13 +121,11 @@ def get_excess_closure_dist(G:nx.Graph, layers:List[nx.Graph], res:int=3):
         c_unique - c_pure,
         1 - c_pure,
         out=np.zeros_like(c_unique),
-        where=c_unique != c_pure,
+        where=(1 - c_pure) != 0,
     )
 
-    print("c_pure", c_pure)
-    print("c_unique", c_unique)
-    print("c_excess", c_excess)
-
+    c_excess = c_excess[np.isfinite(c_excess)]
+    c_excess = c_excess[(c_excess >= 0) & (c_excess <= 1)]
 
     np.round(c_excess, decimals=res, out=c_excess)
 
@@ -173,7 +166,6 @@ def _T(G:nx.Graph, node_labels:List[str]):
     Return array of numbers of triangles around each node in node_labels.
     """
     triangles = nx.triangles(G)
-    print("triangles", triangles)
 
     return np.array(
         [triangles[node] for node in node_labels],
@@ -207,3 +199,40 @@ def _P(G:nx.Graph, layers:List[nx.Graph], node_labels:List[str]):
     sum_binom_sumAl_2 = binom_sumAl_2.sum(axis=0)
 
     return binom_k_2 - sum_binom_sumAl_2
+
+def excess_closure_by_node(G, layers):
+    node_labels = list(G.nodes())
+
+    t_pure = _T_pure(layers, node_labels)
+    t_unique = _T(G, node_labels)
+    p = _P(G, layers, node_labels)
+
+    c_pure = np.divide(
+        t_pure, p,
+        out=np.zeros_like(t_pure, dtype=float),
+        where=p != 0,
+    )
+
+    c_unique = np.divide(
+        t_unique, p,
+        out=np.zeros_like(t_unique, dtype=float),
+        where=p != 0,
+    )
+
+    c_excess = np.divide(
+        c_unique - c_pure,
+        1 - c_pure,
+        out=np.zeros_like(c_unique, dtype=float),
+        where=(1 - c_pure) != 0,
+    )
+
+    print("min/max c_pure:", c_pure.min(), c_pure.max())
+    print("min/max c_unique:", c_unique.min(), c_unique.max())
+    print("min/max c_excess:", c_excess.min(), c_excess.max())
+    print("any c_pure > c_unique?", np.any(c_pure > c_unique))
+    print("any c_pure > 1?", np.any(c_pure > 1))
+    print("any c_unique > 1?", np.any(c_unique > 1))
+
+    c_excess = np.clip(c_excess, 0.0, 1.0)
+
+    return dict(zip(node_labels, c_excess))

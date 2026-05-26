@@ -11,6 +11,7 @@ from .properties import (
     get_density,
     get_clustering,
     get_avg_degree,
+    excess_closure_by_node
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "get_density",
     "get_clustering",
     "get_avg_degree",
+    "excess_closure_by_node"
 ]

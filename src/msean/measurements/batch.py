@@ -157,7 +157,7 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
         elif prop in GLOBAL_PROPERTIES:
             aggregate_value = aggregate_global_property(G_list, prop)
         elif prop in DISTRIBUTION_PROPERTIES:
-            aggregate_value = aggregate_distribution(G_list, cfg, prop)
+            aggregate_value = aggregate_distribution(G_list, layers_list, cfg, prop)
         else:
             raise ValueError(f"Unknown property: {prop}")
 
@@ -175,32 +175,73 @@ def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
 
     return np.mean(values), np.std(values)
 
-def aggregate_distribution(G_list: List[nx.Graph], cfg: Config, property: PropertyEnum, resolution: float = None):
+def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], cfg: Config, property: PropertyEnum, resolution: float = None):
     if resolution is None:
-        if property in [PropertyEnum.CLUSTERING_DISTRIBUTION, PropertyEnum.EDGE_LENGTH_DISTRIBUTION]:
+        if property in [
+            PropertyEnum.CLUSTERING_DISTRIBUTION,
+            PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
+            PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION
+        ]:
             # Range is between 0 and 1
             resolution = 0.05
         else:
             resolution = 1.0
 
     distributions = []
-    for G in G_list:
+    for G, layers in zip(G_list, layers_list):
         if property == PropertyEnum.EDGE_LENGTH_DISTRIBUTION:
             # Passing cfg to specify whether toroidal (and if so, what is the metric space size)
             distributions.append(PROPERTY_CALL[property](G, cfg))
+        elif property == PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION:
+            # Also requires individual layers
+            distributions.append(PROPERTY_CALL[property](G, layers))
         else:
             distributions.append(PROPERTY_CALL[property](G))
 
-    aggregated_distribution, aggregated_std = combine_distributions(distributions, resolution)
+    if property == PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION:
+        aggregated_distribution, aggregated_std = combine_distributions(
+            distributions,
+            resolution,
+            min_val=0.0,
+            max_val=1.0,
+        )
+    else:
+        aggregated_distribution, aggregated_std = combine_distributions(distributions, resolution)
 
     return aggregated_distribution, aggregated_std
 
-def combine_distributions(distributions: List[np.array], resolution: float):
-    # Calculate the minimum and maximum value over all distributions
-    min_val = min(arr[:, 0].min() for arr in distributions)
-    max_val = max(arr[:, 0].max() for arr in distributions)
+def combine_distributions(
+        distributions: List[np.array],
+        resolution: float,
+        min_val: float = None,
+        max_val: float = None,
+    ):
 
-    # Create a new range of values (Add buffer so out of range values still map safely)
+    # Remove invalid rows
+    clean_distributions = []
+
+    for arr in distributions:
+        arr = np.asarray(arr, dtype=float)
+
+        mask = (
+            np.isfinite(arr[:, 0]) &
+            np.isfinite(arr[:, 1])
+        )
+
+        arr = arr[mask]
+
+        clean_distributions.append(arr)
+
+    distributions = clean_distributions
+
+    # Calculate the minimum and maximum value over all distributions
+    if min_val is None:
+        min_val = min(arr[:, 0].min() for arr in distributions)
+
+    if max_val is None:
+        max_val = max(arr[:, 0].max() for arr in distributions)
+
+    # Create a new range of values
     vals = np.arange(
         min_val,
         max_val + 2 * resolution,
@@ -215,6 +256,7 @@ def combine_distributions(distributions: List[np.array], resolution: float):
 
     mean_freqs = flat_arrays.mean(axis=0)
     std_freqs = flat_arrays.std(axis=0)
+
     result = np.column_stack((vals, mean_freqs, std_freqs))
 
     return result, std_freqs
