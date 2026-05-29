@@ -3,9 +3,9 @@ n_runs: 10
 
 network:
   n_nodes: 1000                               # N
-  n_layers: 5                                 # L
-  n_affiliations: [25, 50, 100, 200, 400]             # K_l
-  layer_labels: ['l1', 'l2', 'l3', 'l4', 'l5']
+  n_layers: 6                                 # L
+  n_affiliations: [100, 150, 200, 250, 300, 350]             # K_l
+  layer_labels: ['l1', 'l2', 'l3', 'l4', 'l5', 'l6']
 
 metric_space:                                 # S
   square_side: 1
@@ -18,17 +18,14 @@ embedding:
 
 connection:
   function: exponential_decay                 # gamma
-  alpha: 0.01
+  xi: 1
+  r_0: 0.1
+  s: 1
 
 visualization:
   plot_network: true
   plot_degree_distribution: true
   show: False
-
-analysis:
-  mc:
-    n_trials: 1000
-    omega_lookup_res: 201
 
 output:
   plots:
@@ -38,3 +35,5 @@ output:
     network_visualization: true
     save: true
     show: false
+  
+# TODO: multiple runs
