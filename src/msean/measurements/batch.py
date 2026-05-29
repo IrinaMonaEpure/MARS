@@ -183,24 +183,29 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
 
 def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
     # average over results from multiple runs, simple mean for global properties
-    values = []
-    for G in G_list:
-        values.append(PROPERTY_CALL[property](G))
-    values = np.array(values)
+    values = np.array([
+        PROPERTY_CALL[property](G)
+        for G in G_list
+    ], dtype=float)
 
-    return np.mean(values), np.std(values)
+    mean = np.mean(values)
+    std = np.std(values)
+    se = std / np.sqrt(len(values))
+
+    return mean, std, se
 
 def aggregate_global_property_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum):
     # average over results from multiple runs, simple mean for global properties
-    values = []
-    for layers in layers_list:
-        values.append(PROPERTY_CALL[property](layers))
-    values = np.array(values, dtype=float)
+    values = np.array([
+        PROPERTY_CALL[property](layers)
+        for layers in layers_list
+    ], dtype=float)
 
     mean_values = np.mean(values, axis=0)
     std_values = np.std(values, axis=0)
+    se_values = std_values / np.sqrt(values.shape[0])
 
-    return mean_values, std_values
+    return mean_values, std_values, se_values
 
 def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], cfg: Config, property: PropertyEnum, resolution: float = None):
     if resolution is None:
@@ -226,16 +231,16 @@ def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Gra
             distributions.append(PROPERTY_CALL[property](G))
 
     if property == PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION:
-        aggregated_distribution, aggregated_std = combine_distributions(
+        aggregated_distribution = combine_distributions(
             distributions,
             resolution,
             min_val=0.0,
             max_val=1.0,
         )
     else:
-        aggregated_distribution, aggregated_std = combine_distributions(distributions, resolution)
+        aggregated_distribution = combine_distributions(distributions, resolution)
 
-    return aggregated_distribution, aggregated_std
+    return aggregated_distribution
 
 def combine_distributions(
         distributions: List[np.array],
@@ -281,12 +286,14 @@ def combine_distributions(
         for arr in distributions
     ])
 
+    n_runs = flat_arrays.shape[0]
     mean_freqs = flat_arrays.mean(axis=0)
     std_freqs = flat_arrays.std(axis=0)
+    se_freqs = std_freqs / np.sqrt(n_runs)
 
-    result = np.column_stack((vals, mean_freqs, std_freqs))
+    result = np.column_stack((vals, mean_freqs, std_freqs, se_freqs))
 
-    return result, std_freqs
+    return result
 
 def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 1.0):
     distribution_sets = []
