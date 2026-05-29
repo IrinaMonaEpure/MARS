@@ -210,14 +210,19 @@ def aggregate_global_property_per_layer(layers_list: List[List[nx.Graph]], prope
 def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], cfg: Config, property: PropertyEnum, resolution: float = None):
     if resolution is None:
         if property in [
+            PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION,
+            PropertyEnum.DENSITY,
+            PropertyEnum.DENSITY_PER_LAYER,
+            PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
             PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION,
-            PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
-            PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION
+            PropertyEnum.GLOBAL_CLUSTERING,
+            PropertyEnum.EDGE_LENGTH_DISTRIBUTION
         ]:
             # Range is between 0 and 1, or 0 and sqrt(2) for edge length
             resolution = 0.05
         else:
-            resolution = 1.0
+            # Other properties like degree, triangles, embededdness
+            resolution = 5.0
 
     distributions = []
     for G, layers in zip(G_list, layers_list):
@@ -295,7 +300,7 @@ def combine_distributions(
 
     return result
 
-def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 1.0):
+def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 5.0):
     distribution_sets = []
     for layer_set in layers_list:
         distribution_sets.append(PROPERTY_CALL[property](layer_set))
