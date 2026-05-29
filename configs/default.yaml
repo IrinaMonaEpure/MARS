@@ -27,6 +27,11 @@ visualization:
   plot_degree_distribution: true
   show: False
 
+analysis:
+  mc:
+    n_trials: 1000
+    omega_lookup_res: 201
+
 output:
   plots:
     degree_dist: true
@@ -35,5 +40,6 @@ output:
     network_visualization: true
     save: true
     show: false
+
   
 # TODO: multiple runs
