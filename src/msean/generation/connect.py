@@ -4,6 +4,9 @@ import numpy as np
 from msean.config import Config
 
 
+SQRT2 = math.sqrt(2)
+
+
 def d(pos1, pos2, cfg:Config):
     """
     Compute the Euclidean distance between two points in 2D.
@@ -64,12 +67,12 @@ def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.rando
 
     for aff in affiliation_embedding:
         affiliation_pos = affiliation_embedding[aff]
-        w_dict[aff] = math.exp(- cfg.connection.xi * ((d(node_pos, affiliation_pos, cfg)/cfg.connection.r_0)**cfg.connection.s))
+        w_dict[aff] = math.exp(-1 * d(node_pos, affiliation_pos, cfg)/(cfg.connection.alpha * SQRT2))
 
-    Z = sum([w_dict[k] for k in w_dict])
+    z = sum([w_dict[k] for k in w_dict])
 
     affs = [k for k in w_dict]
-    probs = [w_dict[k]/Z for k in affs]
+    probs = [w_dict[k]/z for k in affs]
 
     ai = rng.choice(affs, p=probs)
 
