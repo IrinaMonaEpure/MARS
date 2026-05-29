@@ -1,5 +1,5 @@
 seed: 42
-n_runs: 2
+n_runs: 10
 
 network:
   n_nodes: 1000                               # N
@@ -19,7 +19,7 @@ embedding:
 connection:
   function: exponential_decay                 # gamma
   xi: 1
-  r_0: 0.25
+  r_0: 0.1
   s: 1
 
 visualization:
