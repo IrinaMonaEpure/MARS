@@ -15,6 +15,8 @@ from .properties import (
     get_avg_degree,
     get_avg_degree_layers,
     get_triangles,
+    get_triangles_layers,
+    get_triangle_dimension_counts,
     excess_closure_by_node
 )
 
@@ -33,5 +35,7 @@ __all__ = [
     "get_avg_degree",
     "get_avg_degree_layers",
     "get_triangles",
+    "get_triangles_layers",
+    "get_triangle_dimension_counts",
     "excess_closure_by_node"
 ]

@@ -18,7 +18,9 @@ from msean.measurements import (
     get_avg_local_clustering,
     get_avg_degree,
     get_avg_degree_layers,
-    get_triangles
+    get_triangles,
+    get_triangles_layers,
+    get_triangle_dimension_counts,
 )
 
 from msean.config import Config, set_nested, save_config
@@ -38,7 +40,9 @@ PROPERTY_CALL = {
     PropertyEnum.AVERAGE_LOCAL_CLUSTERING: get_avg_local_clustering,
     PropertyEnum.AVERAGE_DEGREE: get_avg_degree,
     PropertyEnum.AVERAGE_DEGREE_PER_LAYER: get_avg_degree_layers,
-    PropertyEnum.TRIANGLES: get_triangles
+    PropertyEnum.TRIANGLES: get_triangles,
+    PropertyEnum.TRIANGLES_PER_LAYER: get_triangles_layers,
+    PropertyEnum.TRIANGLE_DIMENSIONS: get_triangle_dimension_counts
 }
 
 GLOBAL_PROPERTIES = [
@@ -48,7 +52,9 @@ GLOBAL_PROPERTIES = [
     PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
     PropertyEnum.AVERAGE_DEGREE,
     PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
-    PropertyEnum.TRIANGLES
+    PropertyEnum.TRIANGLES,
+    PropertyEnum.TRIANGLES_PER_LAYER,
+    PropertyEnum.TRIANGLE_DIMENSIONS
 ]
 
 DISTRIBUTION_PROPERTIES = [
@@ -166,9 +172,17 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
         if prop == PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER:
             # Degree distribution per layer requires individual layers as input
             aggregate_value = aggregate_distribution_per_layer(layers_list, prop)
-        elif prop in [PropertyEnum.AVERAGE_DEGREE_PER_LAYER, PropertyEnum.DENSITY_PER_LAYER]:
+        elif prop in [PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
+                      PropertyEnum.DENSITY_PER_LAYER,
+                      PropertyEnum.TRIANGLES_PER_LAYER]:
             # Require individual layers as input
             aggregate_value = aggregate_global_property_per_layer(layers_list, prop)
+        elif prop == PropertyEnum.TRIANGLE_DIMENSIONS:
+            aggregate_value = aggregate_global_property_graph_and_layers(
+                G_list,
+                layers_list,
+                prop,
+            )
         elif prop in GLOBAL_PROPERTIES:
             aggregate_value = aggregate_global_property(G_list, prop)
         elif prop in DISTRIBUTION_PROPERTIES:
@@ -199,6 +213,22 @@ def aggregate_global_property_per_layer(layers_list: List[List[nx.Graph]], prope
     values = np.array([
         PROPERTY_CALL[property](layers)
         for layers in layers_list
+    ], dtype=float)
+
+    mean_values = np.mean(values, axis=0)
+    std_values = np.std(values, axis=0)
+    se_values = std_values / np.sqrt(values.shape[0])
+
+    return mean_values, std_values, se_values
+
+def aggregate_global_property_graph_and_layers(
+    G_list: List[nx.Graph],
+    layers_list: List[List[nx.Graph]],
+    property: PropertyEnum,
+):
+    values = np.array([
+        PROPERTY_CALL[property](G, layers)
+        for G, layers in zip(G_list, layers_list)
     ], dtype=float)
 
     mean_values = np.mean(values, axis=0)

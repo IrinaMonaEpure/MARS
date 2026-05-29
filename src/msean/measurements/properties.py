@@ -20,6 +20,8 @@ class PropertyEnum(Enum):
     AVERAGE_DEGREE = 11
     AVERAGE_DEGREE_PER_LAYER = 12
     TRIANGLES = 13
+    TRIANGLES_PER_LAYER = 14
+    TRIANGLE_DIMENSIONS = 15
 
 
 # Distributions
@@ -182,9 +184,61 @@ def get_avg_degree_layers(layers:List[nx.Graph]):
 
 def get_triangles(G:nx.Graph):
     """
-    Returns the number of triangles in the graph.
+    Returns the number of triangles in the aggregate graph.
     """
-    return sum(nx.triangles(G).values()) // 3
+    return sum(nx.triangles(G).values()) / 3
+
+def get_triangles_layers(layers: List[nx.Graph]) -> np.ndarray:
+    """
+    Returns total number of triangles per layer.
+    """
+    return np.array([
+        sum(nx.triangles(layer).values()) / 3
+        for layer in layers
+    ], dtype=float)
+
+def get_triangle_dimension_counts(G: nx.Graph, layers: List[nx.Graph]):
+    """
+    Returns [n_1d, n_2d, n_3d] triangle counts.
+
+    1d: triangle can be realized in one layer
+    2d: triangle needs exactly two layers
+    3d: triangle needs exactly three layers
+    """
+    edge_to_layers = {}
+
+    for layer_idx, layer in enumerate(layers):
+        for u, v in layer.edges():
+            edge = frozenset((u, v))
+            edge_to_layers.setdefault(edge, set()).add(layer_idx)
+
+    counts = np.zeros(3, dtype=float)
+
+    node_order = {node: i for i, node in enumerate(G.nodes())}
+    neighbors = {node: set(G.neighbors(node)) for node in G.nodes()}
+
+    for u in G.nodes():
+        for v in neighbors[u]:
+            if node_order[v] <= node_order[u]:
+                continue
+
+            common = neighbors[u] & neighbors[v]
+
+            for w in common:
+                if node_order[w] <= node_order[v]:
+                    continue
+
+                edge_layers = [
+                    edge_to_layers[frozenset((u, v))],
+                    edge_to_layers[frozenset((u, w))],
+                    edge_to_layers[frozenset((v, w))],
+                ]
+
+                dim = _triangle_layer_dimension(edge_layers)
+
+                counts[dim - 1] += 1
+
+    return counts
 
 
 # Utils for excess closure
@@ -254,13 +308,29 @@ def excess_closure_by_node(G, layers):
         where=(1 - c_pure) != 0,
     )
 
-    print("min/max c_pure:", c_pure.min(), c_pure.max())
-    print("min/max c_unique:", c_unique.min(), c_unique.max())
-    print("min/max c_excess:", c_excess.min(), c_excess.max())
-    print("any c_pure > c_unique?", np.any(c_pure > c_unique))
-    print("any c_pure > 1?", np.any(c_pure > 1))
-    print("any c_unique > 1?", np.any(c_unique > 1))
-
     c_excess = np.clip(c_excess, 0.0, 1.0)
 
     return dict(zip(node_labels, c_excess))
+
+def _triangle_layer_dimension(edge_layers: List[set]) -> int:
+    e1, e2, e3 = edge_layers
+
+    # 1D: all three edges share at least one layer
+    if e1 & e2 & e3:
+        return 1
+
+    # 2D: some pair of layers can realize all three edges
+    all_layers = e1 | e2 | e3
+
+    for a, b in combinations(all_layers, 2):
+        pair = {a, b}
+
+        if (
+            e1 & pair
+            and e2 & pair
+            and e3 & pair
+        ):
+            return 2
+
+    # Otherwise it needs 3 layers
+    return 3
