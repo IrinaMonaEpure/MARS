@@ -10,12 +10,16 @@ class PropertyEnum(Enum):
     DEGREE_DISTRIBUTION = 1
     DEGREE_DISTRIBUTION_PER_LAYER = 2
     EMBEDDEDNESS_DISTRIBUTION = 3
-    CLUSTERING_DISTRIBUTION = 4
+    LOCAL_CLUSTERING_DISTRIBUTION = 4
     EDGE_LENGTH_DISTRIBUTION = 5
     EXCESS_CLOSURE_DISTRIBUTION = 6
     DENSITY = 7
-    CLUSTERING = 8
-    AVERAGE_DEGREE = 9
+    DENSITY_PER_LAYER = 8
+    GLOBAL_CLUSTERING = 9
+    AVERAGE_LOCAL_CLUSTERING = 10
+    AVERAGE_DEGREE = 11
+    AVERAGE_DEGREE_PER_LAYER = 12
+    TRIANGLES = 13
 
 
 # Distributions
@@ -67,7 +71,7 @@ def get_embeddedness_dist(G:nx.Graph):
 
     return np.column_stack((vals, freqs))
 
-def get_clustering_dist(G:nx.Graph, res:int=2):
+def get_local_clustering_dist(G:nx.Graph, res:int=2):
     """
     Returns the local clustering coefficient distribution as a 2D numpy array:
     [[clustering coefficient, frequency], ...]
@@ -146,17 +150,41 @@ def get_density(G:nx.Graph):
     """
     return nx.density(G)
 
-def get_clustering(G:nx.Graph):
+def get_density_layers(layers:List[nx.Graph]):
+    """
+    Returns a list of density values per layer.
+    """
+    return [nx.density(l) for l in layers]
+
+def get_global_clustering(G:nx.Graph):
     """
     Returns the global clustering coefficient.
     """
     return nx.transitivity(G)
+
+def get_avg_local_clustering(G: nx.Graph):
+    """
+    Returns the average local clustering.
+    """
+    return nx.average_clustering(G)
 
 def get_avg_degree(G:nx.Graph):
     """
     Returns the average degree of the graph.
     """
     return np.mean([d for _, d in G.degree()])
+
+def get_avg_degree_layers(layers:List[nx.Graph]):
+    """
+    Returns a list of average degrees per layer.
+    """
+    return [np.mean([d for _, d in l.degree()]) for l in layers]
+
+def get_triangles(G:nx.Graph):
+    """
+    Returns the number of triangles in the graph.
+    """
+    return sum(nx.triangles(G).values()) // 3
 
 
 # Utils for excess closure
