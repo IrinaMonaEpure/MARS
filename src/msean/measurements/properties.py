@@ -2,6 +2,7 @@ from enum import Enum
 import numpy as np
 import networkx as nx
 from typing import List
+from itertools import combinations
 
 from msean.generation import d
 from msean.config import Config
@@ -312,25 +313,23 @@ def excess_closure_by_node(G, layers):
 
     return dict(zip(node_labels, c_excess))
 
-def _triangle_layer_dimension(edge_layers: List[set]) -> int:
+def _triangle_layer_dimension(edge_layers):
     e1, e2, e3 = edge_layers
 
-    # 1D: all three edges share at least one layer
     if e1 & e2 & e3:
         return 1
 
-    # 2D: some pair of layers can realize all three edges
     all_layers = e1 | e2 | e3
 
-    for a, b in combinations(all_layers, 2):
-        pair = {a, b}
+    for a in all_layers:
+        for b in all_layers:
+            pair = {a, b}
 
-        if (
-            e1 & pair
-            and e2 & pair
-            and e3 & pair
-        ):
-            return 2
+            if (
+                e1 & pair
+                and e2 & pair
+                and e3 & pair
+            ):
+                return 2
 
-    # Otherwise it needs 3 layers
     return 3
