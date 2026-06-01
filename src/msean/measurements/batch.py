@@ -18,7 +18,9 @@ from msean.measurements import (
     get_avg_local_clustering,
     get_avg_degree,
     get_avg_degree_layers,
-    get_triangles
+    get_triangles,
+    get_triangles_layers,
+    get_triangle_dimension_counts,
 )
 
 from msean.config import Config, set_nested, save_config
@@ -38,7 +40,9 @@ PROPERTY_CALL = {
     PropertyEnum.AVERAGE_LOCAL_CLUSTERING: get_avg_local_clustering,
     PropertyEnum.AVERAGE_DEGREE: get_avg_degree,
     PropertyEnum.AVERAGE_DEGREE_PER_LAYER: get_avg_degree_layers,
-    PropertyEnum.TRIANGLES: get_triangles
+    PropertyEnum.TRIANGLES: get_triangles,
+    PropertyEnum.TRIANGLES_PER_LAYER: get_triangles_layers,
+    PropertyEnum.TRIANGLE_DIMENSIONS: get_triangle_dimension_counts
 }
 
 GLOBAL_PROPERTIES = [
@@ -48,7 +52,9 @@ GLOBAL_PROPERTIES = [
     PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
     PropertyEnum.AVERAGE_DEGREE,
     PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
-    PropertyEnum.TRIANGLES
+    PropertyEnum.TRIANGLES,
+    PropertyEnum.TRIANGLES_PER_LAYER,
+    PropertyEnum.TRIANGLE_DIMENSIONS
 ]
 
 DISTRIBUTION_PROPERTIES = [
@@ -166,9 +172,17 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
         if prop == PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER:
             # Degree distribution per layer requires individual layers as input
             aggregate_value = aggregate_distribution_per_layer(layers_list, prop)
-        elif prop in [PropertyEnum.AVERAGE_DEGREE_PER_LAYER, PropertyEnum.DENSITY_PER_LAYER]:
+        elif prop in [PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
+                      PropertyEnum.DENSITY_PER_LAYER,
+                      PropertyEnum.TRIANGLES_PER_LAYER]:
             # Require individual layers as input
             aggregate_value = aggregate_global_property_per_layer(layers_list, prop)
+        elif prop == PropertyEnum.TRIANGLE_DIMENSIONS:
+            aggregate_value = aggregate_global_property_graph_and_layers(
+                G_list,
+                layers_list,
+                prop,
+            )
         elif prop in GLOBAL_PROPERTIES:
             aggregate_value = aggregate_global_property(G_list, prop)
         elif prop in DISTRIBUTION_PROPERTIES:
@@ -183,36 +197,62 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
 
 def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
     # average over results from multiple runs, simple mean for global properties
-    values = []
-    for G in G_list:
-        values.append(PROPERTY_CALL[property](G))
-    values = np.array(values)
+    values = np.array([
+        PROPERTY_CALL[property](G)
+        for G in G_list
+    ], dtype=float)
 
-    return np.mean(values), np.std(values)
+    mean = np.mean(values)
+    std = np.std(values)
+    se = std / np.sqrt(len(values))
+
+    return mean, std, se
 
 def aggregate_global_property_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum):
     # average over results from multiple runs, simple mean for global properties
-    values = []
-    for layers in layers_list:
-        values.append(PROPERTY_CALL[property](layers))
-    values = np.array(values, dtype=float)
+    values = np.array([
+        PROPERTY_CALL[property](layers)
+        for layers in layers_list
+    ], dtype=float)
 
     mean_values = np.mean(values, axis=0)
     std_values = np.std(values, axis=0)
+    se_values = std_values / np.sqrt(values.shape[0])
 
-    return mean_values, std_values
+    return mean_values, std_values, se_values
+
+def aggregate_global_property_graph_and_layers(
+    G_list: List[nx.Graph],
+    layers_list: List[List[nx.Graph]],
+    property: PropertyEnum,
+):
+    values = np.array([
+        PROPERTY_CALL[property](G, layers)
+        for G, layers in zip(G_list, layers_list)
+    ], dtype=float)
+
+    mean_values = np.mean(values, axis=0)
+    std_values = np.std(values, axis=0)
+    se_values = std_values / np.sqrt(values.shape[0])
+
+    return mean_values, std_values, se_values
 
 def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], cfg: Config, property: PropertyEnum, resolution: float = None):
     if resolution is None:
         if property in [
+            PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION,
+            PropertyEnum.DENSITY,
+            PropertyEnum.DENSITY_PER_LAYER,
+            PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
             PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION,
-            PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
-            PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION
+            PropertyEnum.GLOBAL_CLUSTERING,
+            PropertyEnum.EDGE_LENGTH_DISTRIBUTION
         ]:
             # Range is between 0 and 1, or 0 and sqrt(2) for edge length
             resolution = 0.05
         else:
-            resolution = 1.0
+            # Other properties like degree, triangles, embededdness
+            resolution = 5.0
 
     distributions = []
     for G, layers in zip(G_list, layers_list):
@@ -226,16 +266,16 @@ def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Gra
             distributions.append(PROPERTY_CALL[property](G))
 
     if property == PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION:
-        aggregated_distribution, aggregated_std = combine_distributions(
+        aggregated_distribution = combine_distributions(
             distributions,
             resolution,
             min_val=0.0,
             max_val=1.0,
         )
     else:
-        aggregated_distribution, aggregated_std = combine_distributions(distributions, resolution)
+        aggregated_distribution = combine_distributions(distributions, resolution)
 
-    return aggregated_distribution, aggregated_std
+    return aggregated_distribution
 
 def combine_distributions(
         distributions: List[np.array],
@@ -281,14 +321,16 @@ def combine_distributions(
         for arr in distributions
     ])
 
+    n_runs = flat_arrays.shape[0]
     mean_freqs = flat_arrays.mean(axis=0)
     std_freqs = flat_arrays.std(axis=0)
+    se_freqs = std_freqs / np.sqrt(n_runs)
 
-    result = np.column_stack((vals, mean_freqs, std_freqs))
+    result = np.column_stack((vals, mean_freqs, std_freqs, se_freqs))
 
-    return result, std_freqs
+    return result
 
-def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 1.0):
+def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 5.0):
     distribution_sets = []
     for layer_set in layers_list:
         distribution_sets.append(PROPERTY_CALL[property](layer_set))
