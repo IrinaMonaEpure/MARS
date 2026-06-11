@@ -2,6 +2,8 @@ import pickle
 import argparse
 import numpy as np
 from pathlib import Path
+import time
+from datetime import datetime
 
 from msean import load_config
 from msean.measurements.batch import batch_experiment
@@ -15,10 +17,11 @@ parser.add_argument("--results_dir", type=str, required=True)
 args = parser.parse_args()
 
 seed = args.seed
-results_dir = Path(args.results_dir).mkdir(parents=True, exist_ok=True)
+results_dir = Path(args.results_dir)
+results_dir.mkdir(parents=True, exist_ok=True)
 
 # Load configuration file
-root = Path.cwd().parents[0] # go up from scripts/ to project root
+root = Path(__file__).resolve().parents[1] # go up from scripts/ to project root
 cfg = load_config(root / "configs" / "default_server.yaml")
 runs_dir = root / "runs"
 
@@ -27,6 +30,14 @@ rng = np.random.default_rng(seed)
 
 # Run batch experiment
 alpha_list = [(1/2)**(i/2) for i in range(0, 21)]
+
+start_time = time.time()
+
+print(
+    f"Seed {seed} started at "
+    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    flush=True,
+)
 
 results, paths = batch_experiment(
     cfg=cfg,
@@ -50,6 +61,14 @@ results, paths = batch_experiment(
         PropertyEnum.EDGE_LENGTH_DISTRIBUTION
     ],
     print_seed=seed
+)
+
+elapsed = time.time() - start_time
+
+print(
+    f"Seed {seed} finished in "
+    f"{elapsed/60:.1f} minutes",
+    flush=True,
 )
 
 # Save results file

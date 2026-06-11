@@ -144,7 +144,7 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
     short_param_name = param_name.split(".")[-1]
 
     for param_val in param_values:
-        if print_seed:
+        if print_seed is not None:
             print(f"[seed={print_seed}] {short_param_name} = {param_val}")
 
         cfg_i = deepcopy(cfg)
