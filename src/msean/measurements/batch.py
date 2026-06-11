@@ -25,7 +25,7 @@ from msean.measurements import (
 
 from msean.config import Config, set_nested, save_config
 from msean.generation import generate_n_graphs
-from msean.io.save import prepare_batch_directory, prepare_run_directory
+from msean.io.save import prepare_batch_directory#, prepare_run_directory
 
 PROPERTY_CALL = {
     PropertyEnum.DEGREE_DISTRIBUTION: get_degree_dist,
@@ -66,7 +66,7 @@ DISTRIBUTION_PROPERTIES = [
     PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION
 ]
 
-def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_values: List, properties: List[PropertyEnum]):
+def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_values: List, properties: List[PropertyEnum], print_seed: int = None):
     """
     Runs a batch experiment by varying a single configuration parameter over a specified range,
     generating a graph for each parameter value, and computing selected properties.
@@ -144,17 +144,20 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
     short_param_name = param_name.split(".")[-1]
 
     for param_val in param_values:
+        if print_seed is not None:
+            print(f"[seed={print_seed}] {short_param_name} = {param_val}")
+
         cfg_i = deepcopy(cfg)
         set_nested(cfg_i, param_name, param_val)
 
         # Prepare run directory inside batch directory 
-        run_name = f"{short_param_name}_{param_val}"
-        run_paths = prepare_run_directory(
-            parent_dir=batch_paths["batch_dir"],
-            run_name=run_name
-        )
+        #run_name = f"{short_param_name}_{param_val}"
+        #run_paths = prepare_run_directory(
+        #    parent_dir=batch_paths["batch_dir"],
+        #    run_name=run_name
+        #)
 
-        save_config(cfg_i, run_paths["config"])
+        #save_config(cfg_i, run_paths["config"])
 
         G_list, layers_list = generate_n_graphs(cfg_i, rng)
 
@@ -249,10 +252,10 @@ def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Gra
             PropertyEnum.EDGE_LENGTH_DISTRIBUTION
         ]:
             # Range is between 0 and 1, or 0 and sqrt(2) for edge length
-            resolution = 0.05
+            resolution = 0.01
         else:
             # Other properties like degree, triangles, embededdness
-            resolution = 5.0
+            resolution = 1.0
 
     distributions = []
     for G, layers in zip(G_list, layers_list):
@@ -330,7 +333,7 @@ def combine_distributions(
 
     return result
 
-def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 5.0):
+def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 1.0):
     distribution_sets = []
     for layer_set in layers_list:
         distribution_sets.append(PROPERTY_CALL[property](layer_set))
