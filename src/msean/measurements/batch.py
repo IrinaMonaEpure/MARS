@@ -1,6 +1,7 @@
 from typing import List, Tuple
 from copy import deepcopy
 from pathlib import Path
+from datetime import datetime
 import numpy as np
 import networkx as nx
 
@@ -145,7 +146,10 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
 
     for param_val in param_values:
         if print_seed is not None:
-            print(f"[seed={print_seed}] {short_param_name} = {param_val}")
+            print(
+                f"[seed={print_seed}] {short_param_name} = {param_val} "
+                f"started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                flush=True)
 
         cfg_i = deepcopy(cfg)
         set_nested(cfg_i, param_name, param_val)

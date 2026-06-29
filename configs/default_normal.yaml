@@ -2,10 +2,10 @@ seed: 42
 n_runs: 10
 
 network:
-  n_nodes: 10000                               # N
-  n_layers: 5                                 # L
-  n_affiliations: [650, 4350, 475, 150, 130]             # K_l
-  layer_labels: ['L1', 'L2', 'L3', 'L4', 'L5']
+  n_nodes: 1000                               # N
+  n_layers: 6                                 # L
+  n_affiliations: [350, 300, 250, 200, 150, 100]             # K_l
+  layer_labels: ['L1', 'L2', 'L3', 'L4', 'L5', 'L6']
 
 metric_space:                                 # S
   square_side: 1
@@ -15,6 +15,7 @@ metric_space:                                 # S
 embedding:
   nodes: normal                              # X_V
   affiliations: uniform                       # X_A
+  std: 0.2
 
 connection:
   function: exponential_decay                 # gamma

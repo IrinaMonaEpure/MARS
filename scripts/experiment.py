@@ -22,20 +22,22 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # Load configuration file
 root = Path(__file__).resolve().parents[1] # go up from scripts/ to project root
-cfg = load_config(root / "configs" / "default_server.yaml")
+cfg = load_config(root / "configs" / "default_server_10k_normal.yaml")
 runs_dir = root / "runs"
 
 # Intialize random number generator for experiment reproducibility
 rng = np.random.default_rng(seed)
 
 # Run batch experiment
-alpha_list = [(1/2)**(i/2) for i in range(0, 21)]
+alpha_list = [(1/2)**(i/2) for i in range(17, 21)]
 
 start_time = time.time()
 
 print(
     f"Seed {seed} started at "
-    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, "
+    f"N: {cfg.network.n_nodes}, "
+    f"K: {cfg.network.n_affiliations}",
     flush=True,
 )
 
