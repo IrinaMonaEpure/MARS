@@ -26,9 +26,10 @@ visualization:
   show: False
 
 analysis:
-  mc:
-    n_trials: 1000
-    omega_lookup_res: 201
+  omega_lookup_res: 101
+  mc_n_trials: 1000
+  trapezoidal_res: 101
+    
 
 output:
   plots:
