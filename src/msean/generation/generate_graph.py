@@ -71,7 +71,7 @@ def gen(cfg:Config, rng: np.random.Generator):
         node_embedding = distribute_nodes_normally(cfg.network.n_nodes, cfg, rng, label_prefix='u')
     elif cfg.embedding.nodes == "truncated_normal":
         node_embedding = distribute_nodes_truncated_normal(cfg.network.n_nodes, cfg, rng, label_prefix='u')
-        print("Embedding nodes with truncated normal distribution", flush=True)
+        
     node_labels = list(node_embedding.keys())
     layers = []
 

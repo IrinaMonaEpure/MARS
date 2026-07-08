@@ -22,14 +22,16 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # Load configuration file
 root = Path(__file__).resolve().parents[1] # go up from scripts/ to project root
-cfg = load_config(root / "configs" / "default_server_10k_normal.yaml")
+cfg = load_config(root / "configs" / "10k_truncated_aff.yaml")
 runs_dir = root / "runs"
 
 # Intialize random number generator for experiment reproducibility
 rng = np.random.default_rng(seed)
 
 # Run batch experiment
-alpha_list = [(1/2)**(i/2) for i in range(17, 21)]
+std_vals = [0.15, 0.2, 0.25, 0.3]
+
+alpha_vals = [(1/2)**(i) for i in range(0, 11)]
 
 start_time = time.time()
 
@@ -42,28 +44,34 @@ print(
 )
 
 results, paths = batch_experiment(
-    cfg=cfg,
-    parent_dir=runs_dir,
-    rng=rng,
-    param_name="connection.alpha",
-    param_values=alpha_list,
-    properties=[
-        PropertyEnum.AVERAGE_DEGREE,
-        PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
-        PropertyEnum.DENSITY,
-        PropertyEnum.DENSITY_PER_LAYER,
-        PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
-        PropertyEnum.DEGREE_DISTRIBUTION,
-        PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER,
-        PropertyEnum.TRIANGLES,
-        PropertyEnum.TRIANGLES_PER_LAYER,
-        PropertyEnum.TRIANGLE_DIMENSIONS,
-        PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION,
-        PropertyEnum.GLOBAL_CLUSTERING,
-        PropertyEnum.EDGE_LENGTH_DISTRIBUTION
-    ],
-    print_seed=seed
-)
+        cfg=cfg,
+        parent_dir=runs_dir,
+        rng=rng,
+        param_names=[
+            "embedding.std",
+            "connection.alpha"
+        ],
+        param_val_lists=[
+            std_vals,
+            alpha_vals
+        ],
+        properties=[
+            PropertyEnum.AVERAGE_DEGREE,
+            PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
+            PropertyEnum.DENSITY,
+            PropertyEnum.DENSITY_PER_LAYER,
+            PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
+            PropertyEnum.DEGREE_DISTRIBUTION,
+            PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER,
+            PropertyEnum.TRIANGLES,
+            PropertyEnum.TRIANGLES_PER_LAYER,
+            PropertyEnum.TRIANGLE_DIMENSIONS,
+            PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION,
+            PropertyEnum.GLOBAL_CLUSTERING,
+            PropertyEnum.EDGE_LENGTH_DISTRIBUTION
+        ],
+        print_seed=seed
+    )
 
 elapsed = time.time() - start_time
 
