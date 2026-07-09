@@ -73,7 +73,6 @@ def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.rando
 
     affs = [k for k in w_dict]
     probs = [w_dict[k]/z for k in affs]
-
     ai = rng.choice(affs, p=probs)
 
     return ai

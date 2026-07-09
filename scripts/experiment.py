@@ -22,7 +22,7 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # Load configuration file
 root = Path(__file__).resolve().parents[1] # go up from scripts/ to project root
-cfg = load_config(root / "configs" / "10k_truncated_aff.yaml")
+cfg = load_config(root / "configs" / "dropout.yaml")
 runs_dir = root / "runs"
 
 # Intialize random number generator for experiment reproducibility

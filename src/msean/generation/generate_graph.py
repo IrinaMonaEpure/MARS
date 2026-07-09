@@ -82,8 +82,9 @@ def gen(cfg:Config, rng: np.random.Generator):
         aff_connections = {}
 
         for node in node_labels:
-            ai = choose_affiliation(node_embedding[node], affiliation_embedding, cfg, rng)
-            aff_connections.setdefault(ai, []).append(node)
+            if rng.random() >= cfg.network.dropout_rate[l]:
+                ai = choose_affiliation(node_embedding[node], affiliation_embedding, cfg, rng)
+                aff_connections.setdefault(ai, []).append(node)
     
         Gl = nx.Graph()
         Gl.add_nodes_from(node_labels)
