@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 from typing import List
 from itertools import combinations
+from collections import defaultdict
 
 from msean.generation import d
 from msean.config import Config
@@ -13,16 +14,18 @@ class PropertyEnum(Enum):
     EMBEDDEDNESS_DISTRIBUTION = 3
     LOCAL_CLUSTERING_DISTRIBUTION = 4
     EDGE_LENGTH_DISTRIBUTION = 5
-    EXCESS_CLOSURE_DISTRIBUTION = 6
-    DENSITY = 7
-    DENSITY_PER_LAYER = 8
-    GLOBAL_CLUSTERING = 9
-    AVERAGE_LOCAL_CLUSTERING = 10
-    AVERAGE_DEGREE = 11
-    AVERAGE_DEGREE_PER_LAYER = 12
-    TRIANGLES = 13
-    TRIANGLES_PER_LAYER = 14
-    TRIANGLE_DIMENSIONS = 15
+    AVERAGE_ALTER_DISTANCE_DISTRIBUTION = 6
+    EXCESS_CLOSURE_DISTRIBUTION = 7
+    DENSITY = 8
+    DENSITY_PER_LAYER = 9
+    GLOBAL_CLUSTERING = 10
+    AVERAGE_LOCAL_CLUSTERING = 11
+    AVERAGE_DEGREE = 12
+    AVERAGE_DEGREE_PER_LAYER = 13
+    TRIANGLES = 14
+    TRIANGLES_PER_LAYER = 15
+    TRIANGLE_DIMENSIONS = 16
+    AVERAGE_MULTIPLEXITY = 17
 
 
 # Distributions
@@ -91,7 +94,7 @@ def get_local_clustering_dist(G:nx.Graph, res:int=2):
     
     return clus_dist
 
-def get_edge_len_dist(G:nx.Graph, cfg: Config, res:int=2):
+def get_edge_len_dist(G:nx.Graph, cfg:Config, res:int=2):
     """
     Returns the edge length distribution as a 2D numpy array:
     [[edge length, frequency], ...]
@@ -106,6 +109,46 @@ def get_edge_len_dist(G:nx.Graph, cfg: Config, res:int=2):
     edge_len_dist = np.column_stack((unique_lens, counts))
     
     return edge_len_dist
+
+def get_avg_alter_alter_dist_dist(G:nx.Graph, cfg:Config, res:int=2):
+    """
+    Returns the distribution of average alter-alter distances over all ego
+    networks as a 2D numpy array:
+    [[average alter-alter distance, frequency], ...]
+    Ego nodes with fewer than 2 alters are ignored.
+    """
+
+    avg_alter_alter_dists = []
+
+    for ego in G.nodes():
+
+        alters = list(G.neighbors(ego))
+
+        if len(alters) < 2:
+            continue
+
+        pairwise_dists = [
+            d(
+                G.nodes[u]["embedding"],
+                G.nodes[v]["embedding"],
+                cfg,
+            )
+            for u, v in combinations(alters, 2)
+        ]
+
+        avg_alter_alter_dists.append(
+            round(np.mean(pairwise_dists), res)
+        )
+
+    if not avg_alter_alter_dists:
+        return np.empty((0, 2), dtype=float)
+
+    unique_vals, counts = np.unique(
+        avg_alter_alter_dists,
+        return_counts=True,
+    )
+
+    return np.column_stack((unique_vals, counts))
 
 def get_excess_closure_dist(G:nx.Graph, layers:List[nx.Graph], res:int=2):
     node_labels = list(G.nodes())
@@ -240,6 +283,39 @@ def get_triangle_dimension_counts(G: nx.Graph, layers: List[nx.Graph]):
                 counts[dim - 1] += 1
 
     return counts
+
+def get_multiplexity(layers: list[nx.Graph]):
+    """Returns the mean ego multiplexity."""
+
+    multiplexities = []
+
+    all_nodes = set().union(*(layer.nodes() for layer in layers))
+
+    for ego in all_nodes:
+
+        alter_layer_counts = defaultdict(int)
+
+        for layer in layers:
+            if ego not in layer:
+                continue
+
+            for alter in layer.neighbors(ego):
+                alter_layer_counts[alter] += 1
+
+        if len(alter_layer_counts) == 0:
+            continue
+
+        multiplexity = (
+            sum(count >= 2 for count in alter_layer_counts.values())
+            / len(alter_layer_counts)
+        )
+
+        multiplexities.append(multiplexity)
+
+    if len(multiplexities) == 0:
+        return np.nan
+
+    return float(np.mean(multiplexities))
 
 
 # Utils for excess closure
