@@ -22,16 +22,16 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # Load configuration file
 root = Path(__file__).resolve().parents[1] # go up from scripts/ to project root
-cfg = load_config(root / "configs" / "10k_truncated_aff.yaml")
+cfg = load_config(root / "configs" / "final_draft.yaml")
 runs_dir = root / "runs"
 
 # Intialize random number generator for experiment reproducibility
 rng = np.random.default_rng(seed)
 
 # Run batch experiment
-std_vals = [0.15, 0.2, 0.25, 0.3]
+std_vals = [0.1, 0.125, 0.15, 0.175, 0.2]
 
-alpha_vals = [(1/2)**(i) for i in range(0, 11)]
+alpha_vals = [(1/2)**(i/2) for i in range(0, 21)]
 
 start_time = time.time()
 
@@ -68,7 +68,9 @@ results, paths = batch_experiment(
             PropertyEnum.TRIANGLE_DIMENSIONS,
             PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION,
             PropertyEnum.GLOBAL_CLUSTERING,
-            PropertyEnum.EDGE_LENGTH_DISTRIBUTION
+            PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
+            PropertyEnum.AVERAGE_ALTER_DISTANCE_DISTRIBUTION,
+            PropertyEnum.AVERAGE_MULTIPLEXITY
         ],
         print_seed=seed
     )
