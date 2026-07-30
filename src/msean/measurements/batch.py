@@ -1,6 +1,8 @@
-from typing import List, Tuple
+from typing import List
 from copy import deepcopy
 from pathlib import Path
+from datetime import datetime
+from itertools import product
 import numpy as np
 import networkx as nx
 
@@ -11,6 +13,7 @@ from msean.measurements import (
     get_embeddedness_dist,
     get_local_clustering_dist,
     get_edge_len_dist,
+    get_avg_alter_alter_dist_dist,
     get_excess_closure_dist,
     get_density,
     get_density_layers,
@@ -18,12 +21,15 @@ from msean.measurements import (
     get_avg_local_clustering,
     get_avg_degree,
     get_avg_degree_layers,
-    get_triangles
+    get_triangles,
+    get_triangles_layers,
+    get_triangle_dimension_counts,
+    get_multiplexity
 )
 
 from msean.config import Config, set_nested, save_config
 from msean.generation import generate_n_graphs
-from msean.io.save import prepare_batch_directory, prepare_run_directory
+from msean.io.save import prepare_batch_directory
 
 PROPERTY_CALL = {
     PropertyEnum.DEGREE_DISTRIBUTION: get_degree_dist,
@@ -31,6 +37,7 @@ PROPERTY_CALL = {
     PropertyEnum.EMBEDDEDNESS_DISTRIBUTION: get_embeddedness_dist,
     PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION: get_local_clustering_dist,
     PropertyEnum.EDGE_LENGTH_DISTRIBUTION: get_edge_len_dist,
+    PropertyEnum.AVERAGE_ALTER_DISTANCE_DISTRIBUTION: get_avg_alter_alter_dist_dist,
     PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION: get_excess_closure_dist,
     PropertyEnum.DENSITY: get_density,
     PropertyEnum.DENSITY_PER_LAYER: get_density_layers,
@@ -38,7 +45,10 @@ PROPERTY_CALL = {
     PropertyEnum.AVERAGE_LOCAL_CLUSTERING: get_avg_local_clustering,
     PropertyEnum.AVERAGE_DEGREE: get_avg_degree,
     PropertyEnum.AVERAGE_DEGREE_PER_LAYER: get_avg_degree_layers,
-    PropertyEnum.TRIANGLES: get_triangles
+    PropertyEnum.TRIANGLES: get_triangles,
+    PropertyEnum.TRIANGLES_PER_LAYER: get_triangles_layers,
+    PropertyEnum.TRIANGLE_DIMENSIONS: get_triangle_dimension_counts,
+    PropertyEnum.AVERAGE_MULTIPLEXITY: get_multiplexity
 }
 
 GLOBAL_PROPERTIES = [
@@ -48,7 +58,10 @@ GLOBAL_PROPERTIES = [
     PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
     PropertyEnum.AVERAGE_DEGREE,
     PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
-    PropertyEnum.TRIANGLES
+    PropertyEnum.TRIANGLES,
+    PropertyEnum.TRIANGLES_PER_LAYER,
+    PropertyEnum.TRIANGLE_DIMENSIONS,
+    PropertyEnum.AVERAGE_MULTIPLEXITY
 ]
 
 DISTRIBUTION_PROPERTIES = [
@@ -57,10 +70,26 @@ DISTRIBUTION_PROPERTIES = [
     PropertyEnum.EMBEDDEDNESS_DISTRIBUTION,
     PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION,
     PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
+    PropertyEnum.AVERAGE_ALTER_DISTANCE_DISTRIBUTION,
     PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION
 ]
 
-def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, param_name: str, param_values: List, properties: List[PropertyEnum]):
+
+def make_hashable(x):
+    if isinstance(x, list):
+        return tuple(make_hashable(v) for v in x)
+    return x
+
+
+def batch_experiment(
+    cfg: Config,
+    parent_dir: Path,
+    rng: np.random.Generator,
+    param_names: List[str],
+    param_val_lists: List[List],
+    properties: List[PropertyEnum],
+    print_seed: int = None
+):
     """
     Runs a batch experiment by varying a single configuration parameter over a specified range,
     generating a graph for each parameter value, and computing selected properties.
@@ -135,25 +164,35 @@ def batch_experiment(cfg: Config, parent_dir: Path, rng: np.random.Generator, pa
 
     results = {}
 
-    short_param_name = param_name.split(".")[-1]
+    short_param_names = [param_name.split(".")[-1] for param_name in param_names]
 
-    for param_val in param_values:
-        cfg_i = deepcopy(cfg)
-        set_nested(cfg_i, param_name, param_val)
+    for param_vals in product(*param_val_lists):
 
-        # Prepare run directory inside batch directory 
-        run_name = f"{short_param_name}_{param_val}"
-        run_paths = prepare_run_directory(
-            parent_dir=batch_paths["batch_dir"],
-            run_name=run_name
+        param_key = tuple(make_hashable(v) for v in param_vals)
+
+        if print_seed is None:
+            print_seed = cfg.seed
+
+        param_msg = ", ".join(
+            f"{name}={value}"
+            for name, value in zip(short_param_names, param_vals)
         )
 
-        save_config(cfg_i, run_paths["config"])
+        print(
+            f"[seed={print_seed}] {param_msg} "
+            f"started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            flush=True
+        )
+
+        cfg_i = deepcopy(cfg)
+
+        for param_name, param_val in zip(param_names, param_vals):
+            set_nested(cfg_i, param_name, param_val)
 
         G_list, layers_list = generate_n_graphs(cfg_i, rng)
 
         param_results = measure_properties(G_list, layers_list, cfg_i, properties)
-        results[param_val] = param_results
+        results[param_key] = param_results
 
     return results, batch_paths
 
@@ -166,9 +205,19 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
         if prop == PropertyEnum.DEGREE_DISTRIBUTION_PER_LAYER:
             # Degree distribution per layer requires individual layers as input
             aggregate_value = aggregate_distribution_per_layer(layers_list, prop)
-        elif prop in [PropertyEnum.AVERAGE_DEGREE_PER_LAYER, PropertyEnum.DENSITY_PER_LAYER]:
+        elif prop in [PropertyEnum.AVERAGE_DEGREE_PER_LAYER,
+                      PropertyEnum.DENSITY_PER_LAYER,
+                      PropertyEnum.TRIANGLES_PER_LAYER]:
             # Require individual layers as input
             aggregate_value = aggregate_global_property_per_layer(layers_list, prop)
+        elif prop == PropertyEnum.TRIANGLE_DIMENSIONS:
+            aggregate_value = aggregate_global_property_graph_and_layers(
+                G_list,
+                layers_list,
+                prop,
+            )
+        elif prop == PropertyEnum.AVERAGE_MULTIPLEXITY:
+            aggregate_value = aggregate_global_property(layers_list, prop)
         elif prop in GLOBAL_PROPERTIES:
             aggregate_value = aggregate_global_property(G_list, prop)
         elif prop in DISTRIBUTION_PROPERTIES:
@@ -183,40 +232,71 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
 
 def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
     # average over results from multiple runs, simple mean for global properties
-    values = []
-    for G in G_list:
-        values.append(PROPERTY_CALL[property](G))
-    values = np.array(values)
+    values = np.array([
+        PROPERTY_CALL[property](G)
+        for G in G_list
+    ], dtype=float)
 
-    return np.mean(values), np.std(values)
+    mean = np.nanmean(values)
+    std = np.nanstd(values)
+    n_valid = np.count_nonzero(np.isfinite(values))
+    se = std / np.sqrt(n_valid) if n_valid > 0 else np.nan
+
+    return mean, std, se
 
 def aggregate_global_property_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum):
     # average over results from multiple runs, simple mean for global properties
-    values = []
-    for layers in layers_list:
-        values.append(PROPERTY_CALL[property](layers))
-    values = np.array(values, dtype=float)
+    values = np.array([
+        PROPERTY_CALL[property](layers)
+        for layers in layers_list
+    ], dtype=float)
 
     mean_values = np.mean(values, axis=0)
     std_values = np.std(values, axis=0)
+    se_values = std_values / np.sqrt(values.shape[0])
 
-    return mean_values, std_values
+    return mean_values, std_values, se_values
+
+def aggregate_global_property_graph_and_layers(
+    G_list: List[nx.Graph],
+    layers_list: List[List[nx.Graph]],
+    property: PropertyEnum,
+):
+    values = np.array([
+        PROPERTY_CALL[property](G, layers)
+        for G, layers in zip(G_list, layers_list)
+    ], dtype=float)
+
+    mean_values = np.mean(values, axis=0)
+    std_values = np.std(values, axis=0)
+    se_values = std_values / np.sqrt(values.shape[0])
+
+    return mean_values, std_values, se_values
 
 def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], cfg: Config, property: PropertyEnum, resolution: float = None):
     if resolution is None:
         if property in [
+            PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION,
+            PropertyEnum.DENSITY,
+            PropertyEnum.DENSITY_PER_LAYER,
+            PropertyEnum.AVERAGE_LOCAL_CLUSTERING,
             PropertyEnum.LOCAL_CLUSTERING_DISTRIBUTION,
+            PropertyEnum.GLOBAL_CLUSTERING,
             PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
-            PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION
+            PropertyEnum.AVERAGE_ALTER_DISTANCE_DISTRIBUTION
         ]:
             # Range is between 0 and 1, or 0 and sqrt(2) for edge length
-            resolution = 0.05
+            resolution = 0.01
         else:
+            # Other properties like degree, triangles, embededdness
             resolution = 1.0
 
     distributions = []
     for G, layers in zip(G_list, layers_list):
-        if property == PropertyEnum.EDGE_LENGTH_DISTRIBUTION:
+        if property in [
+            PropertyEnum.EDGE_LENGTH_DISTRIBUTION,
+            PropertyEnum.AVERAGE_ALTER_DISTANCE_DISTRIBUTION
+            ]:
             # Passing cfg to specify whether toroidal (and if so, what is the metric space size)
             distributions.append(PROPERTY_CALL[property](G, cfg))
         elif property == PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION:
@@ -226,16 +306,16 @@ def aggregate_distribution(G_list: List[nx.Graph], layers_list: List[List[nx.Gra
             distributions.append(PROPERTY_CALL[property](G))
 
     if property == PropertyEnum.EXCESS_CLOSURE_DISTRIBUTION:
-        aggregated_distribution, aggregated_std = combine_distributions(
+        aggregated_distribution = combine_distributions(
             distributions,
             resolution,
             min_val=0.0,
             max_val=1.0,
         )
     else:
-        aggregated_distribution, aggregated_std = combine_distributions(distributions, resolution)
+        aggregated_distribution = combine_distributions(distributions, resolution)
 
-    return aggregated_distribution, aggregated_std
+    return aggregated_distribution
 
 def combine_distributions(
         distributions: List[np.array],
@@ -250,6 +330,9 @@ def combine_distributions(
     for arr in distributions:
         arr = np.asarray(arr, dtype=float)
 
+        if arr.ndim != 2 or arr.shape[1] < 2 or len(arr) == 0:
+            continue
+
         mask = (
             np.isfinite(arr[:, 0]) &
             np.isfinite(arr[:, 1])
@@ -257,9 +340,13 @@ def combine_distributions(
 
         arr = arr[mask]
 
-        clean_distributions.append(arr)
+        if len(arr) > 0:
+            clean_distributions.append(arr)
 
     distributions = clean_distributions
+
+    if not distributions:
+        return np.empty((0, 4), dtype=float)
 
     # Calculate the minimum and maximum value over all distributions
     if min_val is None:
@@ -281,12 +368,14 @@ def combine_distributions(
         for arr in distributions
     ])
 
+    n_runs = flat_arrays.shape[0]
     mean_freqs = flat_arrays.mean(axis=0)
     std_freqs = flat_arrays.std(axis=0)
+    se_freqs = std_freqs / np.sqrt(n_runs)
 
-    result = np.column_stack((vals, mean_freqs, std_freqs))
+    result = np.column_stack((vals, mean_freqs, std_freqs, se_freqs))
 
-    return result, std_freqs
+    return result
 
 def aggregate_distribution_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum, resolution: float = 1.0):
     distribution_sets = []

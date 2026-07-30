@@ -2,7 +2,7 @@ import itertools
 import networkx as nx
 import numpy as np
 
-from msean.generation import distribute_nodes_uniformly, choose_affiliation
+from msean.generation import distribute_nodes_uniformly, distribute_nodes_normally, distribute_nodes_truncated_normal, choose_affiliation
 from msean.config import Config
 
 
@@ -65,7 +65,13 @@ def gen(cfg:Config, rng: np.random.Generator):
         before aggregation.
     """
 
-    node_embedding = distribute_nodes_uniformly(cfg.network.n_nodes, cfg, rng, label_prefix='u') # I add a prefix to node names so you don't get a node and affiliation called the same thing.
+    if cfg.embedding.nodes == "uniform":
+        node_embedding = distribute_nodes_uniformly(cfg.network.n_nodes, cfg, rng, label_prefix='u')
+    elif cfg.embedding.nodes == "normal":
+        node_embedding = distribute_nodes_normally(cfg.network.n_nodes, cfg, rng, label_prefix='u')
+    elif cfg.embedding.nodes == "truncated_normal":
+        node_embedding = distribute_nodes_truncated_normal(cfg.network.n_nodes, cfg, rng, label_prefix='u')
+        
     node_labels = list(node_embedding.keys())
     layers = []
 

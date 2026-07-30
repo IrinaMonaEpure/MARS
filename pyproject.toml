@@ -9,6 +9,7 @@ description = "A Generative Model for Multilayer Spatially Embedded Affiliation-
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
+    "scipy",
     "pandas",
     "matplotlib",
     "python-igraph",
