@@ -1,0 +1,36 @@
+seed: False
+n_runs: 1
+
+network:
+  n_nodes: 10000                              # N
+  n_layers: 5                                 # L
+  n_affiliations: [656, 4700, 326, 7962, 5817] # K_l
+  layer_labels: ['l1', 'l2', 'l3', 'l4', 'l5']
+
+metric_space:                                 # S
+  square_side: 1
+  distance: euclidean                         # d
+  toroidal: False
+
+embedding:
+  nodes: truncated_normal                     # X_V
+  affiliations: uniform                       # X_A
+  std: False
+
+connection:
+  function: exponential_decay                 # gamma
+  alpha: False
+
+visualization:
+  plot_network: true
+  plot_degree_distribution: true
+  show: False
+
+output:
+  plots:
+    degree_dist: true
+    degree_dist_layers: true
+    embededness: true
+    network_visualization: true
+    save: true
+    show: false

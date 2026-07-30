@@ -7,6 +7,7 @@ from .properties import (
     get_embeddedness_dist,
     get_local_clustering_dist,
     get_edge_len_dist,
+    get_avg_alter_alter_dist_dist,
     get_excess_closure_dist,
     get_density,
     get_density_layers,
@@ -17,6 +18,7 @@ from .properties import (
     get_triangles,
     get_triangles_layers,
     get_triangle_dimension_counts,
+    get_multiplexity,
     excess_closure_by_node
 )
 
@@ -27,6 +29,7 @@ __all__ = [
     "get_embeddedness_dist",
     "get_local_clustering_dist",
     "get_edge_len_dist",
+    "get_avg_alter_alter_dist_dist",
     "get_excess_closure_dist",
     "get_density",
     "get_density_layers",
@@ -37,5 +40,6 @@ __all__ = [
     "get_triangles",
     "get_triangles_layers",
     "get_triangle_dimension_counts",
+    "get_multiplexity",
     "excess_closure_by_node"
 ]
