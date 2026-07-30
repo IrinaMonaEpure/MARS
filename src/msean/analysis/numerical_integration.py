@@ -4,6 +4,7 @@ import math
 import numpy as np
 import random
 import csv
+import shapely
 
 from msean.config import Config
 from msean.generation.connect import d
@@ -84,7 +85,7 @@ def gen_expected_weighting_lookup(cfg):
 def find_closest_coords(cfg:Config, coord_vals, x, y):
     return np.argmin([abs(c - x) for c in coord_vals]), np.argmin([abs(c - y) for c in coord_vals])
 
-def mc_pairwise_connection_prob(cfg: Config, x_u, y_u, x_v, y_v, omega_coord_vals, omega_lookup, K):
+def mc_meanfield_pairwise_connection_prob(cfg: Config, x_u, y_u, x_v, y_v, omega_coord_vals, omega_lookup, K):
     """ 
     Monte-Carlo approximation of the probability that two nodes at positions (xᵤ, yᵤ) and (xᵥ, yᵥ) connect. 
     """
@@ -115,7 +116,7 @@ def mc_pairwise_connection_prob(cfg: Config, x_u, y_u, x_v, y_v, omega_coord_val
 
     return total / cfg.analysis.mc_n_trials
 
-def trapezoidal_pairwise_connection_prob(cfg: Config, x_u, y_u, x_v, y_v, omega_coord_vals, omega_lookup, K):
+def trapezoidal_meanfield_pairwise_connection_prob(cfg: Config, x_u, y_u, x_v, y_v, omega_coord_vals, omega_lookup, K):
     """ 
     Trapezoidal integral of the probability that two nodes at positions (xᵤ, yᵤ) and (xᵥ, yᵥ) connect. 
     """
@@ -145,7 +146,7 @@ def trapezoidal_pairwise_connection_prob(cfg: Config, x_u, y_u, x_v, y_v, omega_
 
     return total / (cfg.analysis.trapezoidal_res**2)
 
-def p_delta(cfg, delta, omega_coord_vals, omega_lookup, K):
+def meanfield_p_delta(cfg, delta, omega_coord_vals, omega_lookup, K):
     """
     Monte-Carlo approximation of the probability of two nodes distance δ apart connecting.
     """
@@ -159,113 +160,124 @@ def p_delta(cfg, delta, omega_coord_vals, omega_lookup, K):
             theta = random.uniform(0,2 * math.pi) # Choose θ uniformly 
             x_v, y_v = (x_u + delta * math.cos(theta), y_u + delta * math.sin(theta)) # Find the point v which is δ away from u and 
 
-        total += trapezoidal_pairwise_connection_prob(cfg, x_u, y_u, x_v, y_v, omega_coord_vals, omega_lookup, K)
+        total += trapezoidal_meanfield_pairwise_connection_prob(cfg, x_u, y_u, x_v, y_v, omega_coord_vals, omega_lookup, K)
 
     return total / cfg.analysis.mc_n_trials
 
 # --- Voronoi Case ---
 
-def catchment_area(cfg, u_pos, v_pos, a_pos):
-    """
-    Calculates the area of the union of the two circles centred on u_pos = (x_u, y_u) and v_pos = (x_v, y_v) passing through a_pos = (x_a, y_a).
-    This represents the area of S which has to be empty for a to be the closest affiliation to both u and v. 
-    ----------
-    cfg : Config
-        Configuration object containing network and connection parameters.
+def calculate_two_circle_union(cfg, u_pos, v_pos, a_pos):
+    r_u = d(u_pos, a_pos, cfg)
+    r_v = d(v_pos, a_pos, cfg)
 
-    u_pos : tuple[float, float]
-        The (x, y) position of the node u in the embedding space.
+    square = shapely.Polygon(([0,0], [0,1], [1,1], [1,0]))
 
-    v_pos : tuple[float, float]
-        The (x, y) position of the node u in the embedding space.
+    c_u = shapely.Point(u_pos[0], u_pos[1]).buffer(r_u)
+    c_v = shapely.Point(v_pos[0], v_pos[1]).buffer(r_v)
 
-    a_pos : tuple[float, float]
-        The (x, y) position of the node u in the embedding space.
+    union_circles = shapely.union(c_u, c_v)
+    truncated_circle = shapely.intersection(union_circles, square)
 
-    Returns
-    -------
-    area : float
-        The area of the union of the circles centred on u and v through a. 
-    """
-    # δ is the distance between u and v.
-    delta = d(u_pos, v_pos, cfg)
+    return truncated_circle.area
 
-    # The radii of the circles are d(u, a) and d(v, a)
-    r_u = d(a_pos, u_pos, cfg)
-    r_v = d(a_pos, v_pos, cfg)
+def calculate_three_circle_union(cfg, u_pos, v_pos, w_pos, a_pos):
+    r_u = d(u_pos, a_pos, cfg)
+    r_v = d(v_pos, a_pos, cfg)
+    r_w = d(w_pos, a_pos, cfg)
 
-    # WLOG let r₁ be greater than r₂
-    r1, r2 = max(r_u, r_v), min(r_u, r_v)
+    square = shapely.Polygon(([0,0], [0,1], [1,1], [1,0]))
 
-    # Calculate the area of the circles as πr²
-    circle_area_1 = math.pi * (r1**2)
-    circle_area_2 = math.pi * (r2**2)
+    c_u = shapely.Point(u_pos[0], u_pos[1]).buffer(r_u)
+    c_v = shapely.Point(v_pos[0], v_pos[1]).buffer(r_v)
+    c_w = shapely.Point(w_pos[0], w_pos[1]).buffer(r_w)
+
+    union_circles = shapely.union_all((c_u, c_v, c_w))
+    truncated_circle = shapely.intersection(union_circles, square)
+
+    return truncated_circle.area
     
-    # If r₁ + r₂ = δ then the circles meet only at a, and the area of the union is the sum of the area of the circles.
-    if math.isclose(r1+r2, delta):
-        return circle_area_1 + circle_area_2
-    # If r₁ - r₂ = δ then the smaller circle is contained entirely by the larger one, and the area is the area of the larger circle.
-    # If δ = 0 then the circles are centred on the same point and the area is the area of the larger circle.
-    elif math.isclose(r1-r2, delta) or math.isclose(delta, 0):
-        return circle_area_1
-    
-    # δₘₚ is the distance to the midpoint of the radical line of the two circles from the centre of the larger circle.
-    distance_to_midpoint = (r1**2 - r2**2)/(2*delta) + (delta/2)
-    # h is the length of the radical line.
-    h = 2 * math.sqrt(r1**2 - distance_to_midpoint**2)
-
-    # θ₁ is the angle from the centre of the bigger circle to the points of intersection of the two circles.
-    theta_1 = 2 * math.asin(h/(2*r1))
-    # The area of the segment with radius r and angle θ is (r²/2)*(θ - sin θ)
-    segment_area_1 = (r1**2)/2 * (theta_1 - math.sin(theta_1))
-
-    # If the centre of the smaller circle is on the radical line, then the area is the area of the large circle + half the area of the small circle, minus the overlapping segment.
-    if math.isclose(distance_to_midpoint, delta):
-        return circle_area_1 + (circle_area_2/2) - segment_area_1
-
-    try:
-        theta_2 = 2 * math.asin(h/(2*r2))
-    except:
-        print(u_pos, v_pos, a_pos, h, r2, h/(2*r2))
-
-
-    # θ₂ is the angle from the centre of the smaller circle to the points of intersection of the two circles.
-    theta_2 = 2 * math.asin(min(h/(2*r2), 1))
-    # The area of the segment with radius r and angle θ is (r²/2)*(θ - sin θ)
-    segment_area_2 = (r2**2)/2 * (theta_2 - math.sin(theta_2))
-
-    # If the radical line is inbetween the circle centres, the area is the sum of the area of the circles, minus the overlapping segments.
-    if distance_to_midpoint < delta:
-        return circle_area_1 + circle_area_2 - segment_area_1 - segment_area_2
-    # Otherwise, the area is the area of the large circle and the small segment, minus the overlapping large segment.
-    else:
-        return circle_area_1 + segment_area_2 - segment_area_1 
-    
-def mc_voronoi_pairwise_connection_prob(cfg, u_pos, v_pos, K):
-    """
-    Monte-Carlo approximation of the probability that two nodes at positions u_pos = (xᵤ, yᵤ) and v_pos = (xᵥ, yᵥ) connect in the Voronoi scheme.
-    """
-    total = 0
-    for _ in range(cfg.analysis.mc_n_trials):
-        a_pos = (random.uniform(0,1), random.uniform(0,1))
-        area = catchment_area(cfg, u_pos, v_pos, a_pos)
-        void_prob = math.e ** (-K*area)
-        total += void_prob
-    return K * total / cfg.analysis.mc_n_trials
-
 def trapezoidal_voronoi_pairwise_connection_prob(cfg, u_pos, v_pos, K):
     """
     Trapezoidal approximation of the probability that two nodes at positions u_pos = (xᵤ, yᵤ) and v_pos = (xᵥ, yᵥ) connect in the Voronoi scheme.
     """
-    total = 0
-    n = int(math.sqrt(cfg.analysis.mc_n_trials))
+    total = 0 # Initialise total for numerical integration average.
+
+    # Split sample space for affiliation positions into an n x n grid, where n = √cfg.analysis.mc_n_trials
+    n = int(math.sqrt(cfg.analysis.mc_n_trials)) 
     for x_a in np.linspace(0, 1, n):
         for y_a in np.linspace(0, 1, n):
             a_pos = (x_a, y_a)
-            area = catchment_area(cfg, u_pos, v_pos, a_pos)
+
+            # The probability that u chooses a is the void probability of the circle centred on u with radius d(u, a).
+            area = calculate_two_circle_union(cfg, u_pos, v_pos, a_pos)
             void_prob = math.e ** (-(K-1)*area)
+
+            # P(a(u) = a ∩ a(v) = a) = P(a(v) = a | a(u) = a)·P(a(u) = a)
             total += void_prob
+            
     return K * total / (n**2)
+
+def mc_voronoi_pairwise_connection_prob(cfg, u_pos, v_pos, K):
+    """
+    Monte-Carlo approximation of the probability that two nodes at positions u_pos = (xᵤ, yᵤ) and v_pos = (xᵥ, yᵥ) connect in the Voronoi scheme.
+    """
+    total = 0 # Initialise total for numerical integration average.
+
+    # Take cfg.analysis.mc_n_trials samples of position for a
+    for _ in range(cfg.analysis.mc_n_trials):
+        a_pos = (random.uniform(0,1), random.uniform(0,1))
+
+        # The probability that u chooses a is the void probability of the circle centred on u with radius d(u, a).
+        area = calculate_two_circle_union(cfg, u_pos, v_pos, a_pos)
+        void_prob = math.e ** (-(K-1)*area)
+
+        # P(a(u) = a ∩ a(v) = a) = P(a(v) = a | a(u) = a)·P(a(u) = a)
+        total += void_prob
+            
+    return K * total / cfg.analysis.mc_n_trials
+    
+
+def mc_voronoi_pairwise_delta_connection_prob(cfg, delta, K):
+    """
+    Monte-Carlo approximation of the probability that two nodes δ apart connect in the Voronoi scheme.
+    """
+
+    total = 0 # Initialise total for numerical integration average.
+
+    # Take cfg.analysis.mc_n_trials samples of positions for u and 
+    for _ in range(cfg.analysis.mc_n_trials):
+        # Sample two uniform points inside the unit square a distance δ apart 
+        v_pos = (-1, -1)
+        while v_pos[0] < 0 or v_pos[0] > 1 or v_pos[1] < 0 or v_pos[1] > 1:
+            u_pos = (np.random.uniform(0,1), np.random.uniform(0,1))
+            theta = np.random.uniform(0, 2*math.pi)
+            v_pos = (delta * math.cos(theta) + u_pos[0], delta * math.sin(theta) + u_pos[1])
+
+        # Find P(u ~ v) by mc methods.
+        total += mc_voronoi_pairwise_connection_prob(cfg, u_pos, v_pos, K)
+
+    return total / cfg.analysis.mc_n_trials
+
+def trapezoidal_voronoi_pairwise_delta_connection_prob(cfg, delta, K):
+    """
+    Monte-Carlo approximation of the probability that two nodes δ apart connect in the Voronoi scheme, using a trapezoidal approximation for the connection probability. 
+    """
+
+    total = 0 # Initialise total for numerical integration average.
+
+    # Take cfg.analysis.mc_n_trials samples of positions for u and 
+    for _ in range(cfg.analysis.mc_n_trials):
+        # Sample two uniform points inside the unit square a distance δ apart 
+        v_pos = (-1, -1)
+        while v_pos[0] < 0 or v_pos[0] > 1 or v_pos[1] < 0 or v_pos[1] > 1:
+            u_pos = (np.random.uniform(0,1), np.random.uniform(0,1))
+            theta = np.random.uniform(0, 2*math.pi)
+            v_pos = (delta * math.cos(theta) + u_pos[0], delta * math.sin(theta) + u_pos[1])
+
+        # Find P(u ~ v) by mc methods.
+        total += trapezoidal_voronoi_pairwise_connection_prob(cfg, u_pos, v_pos, K)
+
+    return total / cfg.analysis.mc_n_trials
 
 # --- Utilities --- 
 
