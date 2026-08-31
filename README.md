@@ -1,6 +1,6 @@
 <h1 align="center">
-  <p>MSEAN</p>
-  <p>Multiplex Spatially Embedded Affiliation-Based Network</p>
+  <p>MARS</p>
+  <p>A framework for modelling register-based social networks</p>
 </h1>
 
 <h2> Quick Start </h2>
