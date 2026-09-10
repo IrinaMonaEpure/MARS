@@ -9,6 +9,7 @@ parser.add_argument("--results_dir", type=str, required=True)
 parser.add_argument("--logs_dir", type=str, required=True)
 parser.add_argument("--n_runs", type=int, required=True)
 parser.add_argument("--max_parallel", type=int, required=True)
+parser.add_argument("--first_seed", type=int, default=0)
 
 args = parser.parse_args()
 
@@ -18,11 +19,15 @@ results_dir.mkdir(parents=True, exist_ok=True)
 logs_dir = Path(args.logs_dir)
 logs_dir.mkdir(parents=True, exist_ok=True)
 
-for batch_start in range(0, args.n_runs, args.max_parallel):
+for batch_start in range(
+    args.first_seed,
+    args.first_seed + args.n_runs,
+    args.max_parallel,
+):
 
     batch_end = min(
         batch_start + args.max_parallel,
-        args.n_runs,
+        args.first_seed + args.n_runs,
     )
 
     print(
