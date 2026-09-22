@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from msean import load_config, save_config
-from msean.generation import gen
-from msean.measurements.properties import get_degree_dist, get_degree_dist_layers, get_embeddedness
-from msean.io.save import prepare_run_directory
+from mars import load_config, save_config
+from mars.generation import gen
+from mars.measurements.properties import get_degree_dist, get_degree_dist_layers, get_embeddedness
+from mars.io.save import prepare_run_directory
 
 if __name__ == "__main__":
     # Load configuration from configs/default.yaml

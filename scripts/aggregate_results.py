@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from msean.measurements.batch import combine_distributions
+from mars.measurements.batch import combine_distributions
 
 
 DISTRIBUTION_RESOLUTIONS = {

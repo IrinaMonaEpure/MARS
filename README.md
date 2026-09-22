@@ -106,7 +106,7 @@ MARS/
 
 ## Model
 
-MARS combines three structural components:
+mars combines three structural components:
 
 * **Multiplexity** — networks consist of multiple affiliation layers.
 * **Spatial embedding** — nodes and affiliations are positioned in a metric space, allowing spatial proximity to influence affiliation formation.

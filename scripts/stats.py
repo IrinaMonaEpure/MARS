@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from msean.measurements.properties import PropertyEnum
+from mars.measurements.properties import PropertyEnum
 
 
 def weighted_percentile(values, weights, q):

@@ -5,9 +5,9 @@ from pathlib import Path
 import time
 from datetime import datetime
 
-from msean import load_config
-from msean.measurements.batch import batch_experiment
-from msean.measurements.properties import PropertyEnum
+from mars import load_config
+from mars.measurements.batch import batch_experiment
+from mars.measurements.properties import PropertyEnum
 
 parser = argparse.ArgumentParser()
 
