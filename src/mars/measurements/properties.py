@@ -5,8 +5,8 @@ from typing import List
 from itertools import combinations
 from collections import defaultdict
 
-from msean.generation import d
-from msean.config import Config
+from mars.generation import d
+from mars.config import Config
 
 class PropertyEnum(Enum):
     DEGREE_DISTRIBUTION = 1

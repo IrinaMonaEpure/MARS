@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from msean.config import Config
+from mars.config import Config
 
 
 SQRT2 = math.sqrt(2)

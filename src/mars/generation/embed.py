@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import truncnorm
 
-from msean.config import Config
+from mars.config import Config
 
 # Embedding nodes - steps 1 and 2a
 

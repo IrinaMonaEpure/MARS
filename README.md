@@ -11,7 +11,7 @@
 
 ## Overview
 
-MSEAN is a framework for generating multiplex social networks from spatially embedded affiliation structures.
+MARS is a framework for generating multiplex social networks from spatially embedded affiliation structures.
 
 Nodes and affiliations are embedded in a metric space, and node–affiliation relationships are determined by spatial proximity. Network layers represent different types of affiliations, while edges between nodes emerge from shared affiliations.
 
@@ -33,8 +33,8 @@ python --version
 ### 2. Clone the repository
 
 ```bash
-git clone https://github.com/IrinaMonaEpure/msean.git
-cd msean
+git clone https://github.com/IrinaMonaEpure/MARS.git
+cd MARS
 ```
 
 ### 3. Create a virtual environment
@@ -60,7 +60,7 @@ python -m venv .venv
 .venv\Scripts\activate.bat
 ```
 
-### 4. Install MSEAN
+### 4. Install MARS
 
 Install the package and its dependencies in editable mode:
 
@@ -95,18 +95,18 @@ runs/
 ## Repository Structure
 
 ```text
-msean/
+MARS/
 ├── configs/        # Experiment configuration files
 ├── runs/           # Generated networks and experiment outputs
 ├── scripts/        # Scripts for running experiments
 ├── src/
-│   └── msean/      # MSEAN source code
+│   └── MARS/       # MARS source code
 └── pyproject.toml  # Package configuration and dependencies
 ```
 
 ## Model
 
-MSEAN combines three structural components:
+MARS combines three structural components:
 
 * **Multiplexity** — networks consist of multiple affiliation layers.
 * **Spatial embedding** — nodes and affiliations are positioned in a metric space, allowing spatial proximity to influence affiliation formation.

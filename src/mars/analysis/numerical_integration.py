@@ -6,8 +6,8 @@ import random
 import csv
 import shapely
 
-from msean.config import Config
-from msean.generation.connect import d
+from mars.config import Config
+from mars.generation.connect import d
 
 SQRT2 = math.sqrt(2)
 

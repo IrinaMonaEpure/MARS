@@ -2,8 +2,8 @@ import itertools
 import networkx as nx
 import numpy as np
 
-from msean.generation import distribute_nodes_uniformly, distribute_nodes_normally, distribute_nodes_truncated_normal, choose_affiliation
-from msean.config import Config
+from mars.generation import distribute_nodes_uniformly, distribute_nodes_normally, distribute_nodes_truncated_normal, choose_affiliation
+from mars.config import Config
 
 
 def generate_n_graphs(cfg:Config, rng:np.random.Generator):

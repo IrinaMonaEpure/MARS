@@ -6,7 +6,7 @@ from itertools import product
 import numpy as np
 import networkx as nx
 
-from msean.measurements import (
+from mars.measurements import (
     PropertyEnum,
     get_degree_dist,
     get_degree_dist_layers,
@@ -27,9 +27,9 @@ from msean.measurements import (
     get_multiplexity
 )
 
-from msean.config import Config, set_nested, save_config
-from msean.generation import generate_n_graphs
-from msean.io.save import prepare_batch_directory
+from mars.config import Config, set_nested, save_config
+from mars.generation import generate_n_graphs
+from mars.io.save import prepare_batch_directory
 
 PROPERTY_CALL = {
     PropertyEnum.DEGREE_DISTRIBUTION: get_degree_dist,
