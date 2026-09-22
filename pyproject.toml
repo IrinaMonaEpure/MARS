@@ -3,20 +3,19 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "MSEAN"
+name = "MARS"
 version = "0.1.0"
-description = "A Generative Model for Multilayer Spatially Embedded Affiliation-Based Network Data"
-requires-python = ">=3.10"
+description = "The MARS framework for modelling register-based social networks"
+requires-python = ">=3.12"
 dependencies = [
     "numpy",
     "scipy",
     "pandas",
     "matplotlib",
-    "python-igraph",
     "networkx",
-    "pyyaml",
     "ipykernel",
     "jupyter",
+    "scikit-learn",
 ]
 
 [tool.setuptools.packages.find]
