@@ -39,6 +39,7 @@ dist/
 runs/*
 !runs/.gitkeep
 outputs
+plots*
 
 # Local / experimental configs (keep default only)
 config/*
