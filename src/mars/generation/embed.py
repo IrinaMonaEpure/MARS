@@ -3,7 +3,6 @@ from scipy.stats import truncnorm
 
 from mars.config import Config
 
-# Embedding nodes - steps 1 and 2a
 
 def distribute_nodes_uniformly(N:int, cfg:Config, rng:np.random.Generator, label_prefix:str='') -> dict:
     """
@@ -56,7 +55,8 @@ def distribute_nodes_normally(N:int, cfg:Config, rng:np.random.Generator, label_
 
 def distribute_nodes_truncated_normal(N:int, cfg:Config, rng:np.random.Generator, label_prefix:str='') -> dict:
     """
-    Distribute N nodes normally in the 2D plane.
+    Distribute N nodes normally in the 2D plane, truncated to
+    fit within the metric space completely.
     
     Arguments:
         N (int): The number of nodes.

@@ -35,10 +35,6 @@ def load_config(path):
     with path.open("r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    # TODO: validate parameter values (e.g. node/layer/affiliation num/square side positive,
-    # layer num equal to affiliation num vector length, literals for distance, distributions,
-    # required keys etc.)
-
     return Config(cfg)
 
 def save_config(cfg, path):

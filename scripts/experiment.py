@@ -23,14 +23,12 @@ results_dir.mkdir(parents=True, exist_ok=True)
 # Load configuration file
 root = Path(__file__).resolve().parents[1] # go up from scripts/ to project root
 cfg = load_config(root / "configs" / "final_draft.yaml")
-runs_dir = root / "runs"
 
 # Intialize random number generator for experiment reproducibility
 rng = np.random.default_rng(seed)
 
 # Run batch experiment
 std_vals = [0.1, 0.125, 0.15, 0.175, 0.2]
-
 alpha_vals = [(1/2)**(i/2) for i in range(0, 21)]
 
 start_time = time.time()
@@ -43,18 +41,11 @@ print(
     flush=True,
 )
 
-results, paths = batch_experiment(
+results = batch_experiment(
         cfg=cfg,
-        parent_dir=runs_dir,
         rng=rng,
-        param_names=[
-            "embedding.std",
-            "connection.alpha"
-        ],
-        param_val_lists=[
-            std_vals,
-            alpha_vals
-        ],
+        param_names=["embedding.std", "connection.alpha"],
+        param_val_lists=[std_vals, alpha_vals],
         properties=[
             PropertyEnum.AVERAGE_DEGREE,
             PropertyEnum.AVERAGE_DEGREE_PER_LAYER,

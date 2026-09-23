@@ -1,8 +1,6 @@
 from pathlib import Path
 from datetime import datetime
 
-from ..config import Config
-
 
 def _next_dated_name(base_dir: Path, suffix: str | None = None) -> str:
     today = datetime.now().strftime("%Y-%m-%d")

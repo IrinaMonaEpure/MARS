@@ -28,12 +28,11 @@ def gen(cfg:Config, rng: np.random.Generator):
     Network generation proceeds as follows:
 
     1. Node embedding:
-       N nodes are placed uniformly at random in the unit square [0, 1]^2.
+       N nodes are placed randomly in the metric space.
 
     2. Layer construction (repeated for each of L layers):
        a. K_l affiliation nodes are embedded uniformly in the same space.
        b. Each node is assigned to exactly one affiliation.
-          where d is the Euclidean distance between the node and an affiliation.
        c. All nodes assigned to the same affiliation are connected, forming
           a clique within that layer.
 
@@ -44,22 +43,13 @@ def gen(cfg:Config, rng: np.random.Generator):
     Parameters
     ----------
     cfg : Config
-        Configuration object specifying network and connection parameters:
-            - cfg.network.n_nodes : int
-                Number of nodes N.
-            - cfg.network.n_layers : int
-                Number of layers L.
-            - cfg.network.n_affiliations : list[int]
-                Number of affiliations K_l for each layer.
-            - cfg.seed : int
-                Random seed for reproducibility.
+        Configuration object specifying network and connection parameters.
     rng: np.random.Generator
 
     Returns
     -------
     G : networkx.Graph
         The aggregated graph obtained by composing all layers.
-
     layers : list[networkx.Graph]
         A list of graphs, where each graph corresponds to a single layer
         before aggregation.

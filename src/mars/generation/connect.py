@@ -34,11 +34,8 @@ def choose_affiliation(node_pos, affiliation_embedding, cfg:Config, rng:np.rando
     a single affiliation is sampled.
 
     The connection (weighting) function is:
-        gamma(d) = exp(-ξ * (d / r_0)^s)
-
+        gamma(d) = exp(-d / (alpha * sqrt(2)))
     where d is the Euclidean distance between the node and an affiliation.
-    When ξ = 1 and s = 1, this reduces to:
-        gamma(d) = exp(-d / r_0)
 
     Parameters
     ----------

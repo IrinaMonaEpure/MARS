@@ -27,9 +27,8 @@ from mars.measurements import (
     get_multiplexity
 )
 
-from mars.config import Config, set_nested, save_config
+from mars.config import Config, set_nested
 from mars.generation import generate_n_graphs
-from mars.io.save import prepare_batch_directory
 
 PROPERTY_CALL = {
     PropertyEnum.DEGREE_DISTRIBUTION: get_degree_dist,
@@ -83,7 +82,6 @@ def make_hashable(x):
 
 def batch_experiment(
     cfg: Config,
-    parent_dir: Path,
     rng: np.random.Generator,
     param_names: List[str],
     param_val_lists: List[List],
@@ -158,12 +156,7 @@ def batch_experiment(
                 See output format of msean.io.save.prepare_batch_directory(cfg).
     """
 
-    # Prepare batch (parent) output directory
-    batch_paths = prepare_batch_directory(parent_dir)
-    save_config(cfg, batch_paths["config"])
-
     results = {}
-
     short_param_names = [param_name.split(".")[-1] for param_name in param_names]
 
     for param_vals in product(*param_val_lists):
@@ -194,10 +187,10 @@ def batch_experiment(
         param_results = measure_properties(G_list, layers_list, cfg_i, properties)
         results[param_key] = param_results
 
-    return results, batch_paths
+    return results
 
 def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]], cfg: Config, properties: List[PropertyEnum]):
-    # replace for prop in properties, return dict results[param_val]
+    """Replaces with prop in properties, returns dict results[param_val]."""
 
     param_results = {}
 
@@ -231,7 +224,8 @@ def measure_properties(G_list: List[nx.Graph], layers_list: List[List[nx.Graph]]
 
 
 def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
-    # average over results from multiple runs, simple mean for global properties
+    """Averages over results from multiple runs, uses a simple mean for global properties."""
+
     values = np.array([
         PROPERTY_CALL[property](G)
         for G in G_list
@@ -245,7 +239,7 @@ def aggregate_global_property(G_list: List[nx.Graph], property: PropertyEnum):
     return mean, std, se
 
 def aggregate_global_property_per_layer(layers_list: List[List[nx.Graph]], property: PropertyEnum):
-    # average over results from multiple runs, simple mean for global properties
+    """Averages over results from multiple runs, uses a simple mean for global properties per layer."""
     values = np.array([
         PROPERTY_CALL[property](layers)
         for layers in layers_list
