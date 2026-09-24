@@ -24,6 +24,7 @@ dist/
 # Generated outputs
 runs_old
 plots_*
+outputs/batch_run
 scripts/logs*
 scripts/results*
 scripts/*.pkl
@@ -35,5 +36,4 @@ scripts/*.out
 *.out
 
 # Local / experimental configs (keep default only)
-config/*
-!config/default.yaml
+configs/small_test.yaml

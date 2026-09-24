@@ -131,6 +131,7 @@ def main():
     combined = aggregate_results(all_results)
 
     output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "wb") as f:
         pickle.dump(combined, f)
