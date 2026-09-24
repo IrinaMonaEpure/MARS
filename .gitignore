@@ -21,10 +21,9 @@ dist/
 .idea/
 .DS_Store
 
-# Generated outputs (keep folder, ignore contents)
+# Generated outputs
 runs_old
-outputs
-plots*
+plots_*
 scripts/logs*
 scripts/results*
 scripts/*.pkl
@@ -32,7 +31,7 @@ scripts/*.log
 scripts/*.csv
 scripts/*.out
 *.csv
-*.tex
+./*.tex
 *.out
 
 # Local / experimental configs (keep default only)

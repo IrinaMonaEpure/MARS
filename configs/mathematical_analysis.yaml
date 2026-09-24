@@ -19,23 +19,8 @@ embedding:
 connection:
   function: exponential_decay                 # gamma
   alpha: 0.01
-
-visualization:
-  plot_network: true
-  plot_degree_distribution: true
-  show: False
-
+  
 analysis:
   omega_lookup_res: 101
   mc_n_trials: 1000
   trapezoidal_res: 101
-    
-
-output:
-  plots:
-    degree_dist: true
-    degree_dist_layers: true
-    embededness: true
-    network_visualization: true
-    save: true
-    show: false

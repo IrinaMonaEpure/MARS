@@ -16,6 +16,7 @@ dependencies = [
     "ipykernel",
     "jupyter",
     "scikit-learn",
+    "shapely",
 ]
 
 [tool.setuptools.packages.find]
