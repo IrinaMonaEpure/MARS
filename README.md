@@ -3,123 +3,45 @@
   <p>A framework for modelling register-based social networks</p>
 </h1>
 
-<p align="center">
-  A generative model for multiplex, spatially embedded, affiliation-based networks.
-</p>
+This repository contains the implementation of the Multiplex Affiliation-based Random Spatially-embedded (MARS) graph framework, which replicates the construction method of register-based social networks. This codebase currently allows for the reproduction of results included in:
+> Hamilton, K., Epure, I., & Takes, F. (2026). MARS: A framework for modelling register-based social networks. arXiv preprint arXiv:2608.10946.
 
----
-
-## Overview
-
-MARS is a framework for generating multiplex social networks from spatially embedded affiliation structures.
-
-Nodes and affiliations are embedded in a metric space, and node–affiliation relationships are determined by spatial proximity. Network layers represent different types of affiliations, while edges between nodes emerge from shared affiliations.
-
-Experiments are configured through YAML files, making it possible to vary model parameters and generate networks reproducibly.
-
-This is a work in progress, currently available as a [preprint on ArXiv](https://arxiv.org/abs/2608.10946).
+This is currently accessible as a [preprint](https://arxiv.org/abs/2608.10946). A user guide for the framework is under work.
 
 ## Quick Start
 
-### 1. Prerequisites
-
-Make sure [Git](https://git-scm.com/install/) and [Python](https://www.python.org/downloads/) are installed:
-
-```bash
-git --version
-python --version
-```
-
-### 2. Clone the repository
-
+### 1. Environment Setup
+This project requires prior setup of [Git](https://git-scm.com/), [Conda](https://anaconda.org/channels/anaconda/packages/conda/overview), and [Python](https://www.python.org/) 3.12 or higher. You can clone this repository and set up a Conda environment with the dependencies specified in `pyproject.toml` in the following way:
 ```bash
 git clone https://github.com/IrinaMonaEpure/MARS.git
 cd MARS
+
+conda create -n mars python=3.12
+conda activate mars
+python -m pip install -e .
 ```
 
-### 3. Create a virtual environment
-
-**Linux/macOS**
-
+### 2. Running MARS
+The experiments detailed in our preprint can be run using the files inside the `scripts` folder. They are configured based on the file `configs/final_draft.yaml` and by setting variables `cfg`, `std_vals`, and `alpha_vals` inside file `scripts/experiment.py`.
+- `cfg` specifies which configuration file is used: `cfg = load_config(root / "configs" / "final_draft.yaml")`;
+- `std_vals` is the list of standard deviation (sigma) values used: `std_vals = [0.1, 0.125, 0.15, 0.175, 0.2]`;
+- `alpha_vals` is the list of spatial freedom (alpha) values used: `alpha_vals = [(1/2)**(i/2) for i in range(0, 21)]`.
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+cd scripts
+
+# run_batch.py calls experiment.py n_runs times, launching max_parallel jobs in parallel at once
+python run_batch.py --results_dir ../outputs/batch_run/results --logs_dir ../outputs/batch_run/logs --n_runs 100 --max_parallel 25
+
+# stats_generic.py creates .csv files detailing the average distributions of a selected property in the experiment result files
+python stats_generic.py --results_dir ../outputs/batch_run/results --output ../outputs/stats/degree_stats.csv --property DEGREE_DISTRIBUTION
+
+# aggregate_results.py aggregates all experiment result files into a single .pkl file
+python aggregate_results.py --results_dir ../outputs/batch_run/results --output ../outputs/batch_run/aggregate_results/batch_experiment_results.pkl
 ```
 
-**Windows (PowerShell)**
+### 3. Generating Plots and Tables
+The figures and tables included in our preprint can be generated using the Jupyter notebooks inside folder `notebooks`. If you did not run the full experiments as instructed in the previous step, you can still run the notebooks using the provided input files found inside folder `inputs`. However, if you did run the commands above, you can make the following changes to use your locally generated data:
+- inside `notebooks/fit_alpha_and_std_on_degree_dist.ipynb`, set `summary_path` to `../outputs/batch_run/stats/degree_stats.csv`;
+- inside `notebooks/final_draft.ipynb`, set `results_path` to  `..outputs/batch_run/aggregate_results/batch_experiment_results.pkl`.
 
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-**Windows (Command Prompt)**
-
-```cmd
-python -m venv .venv
-.venv\Scripts\activate.bat
-```
-
-### 4. Install MARS
-
-Install the package and its dependencies in editable mode:
-
-```bash
-pip install -e .
-```
-
-### 5. Configure an experiment
-
-Create a YAML configuration file in:
-
-```text
-configs/
-```
-
-Use [`configs/default.yaml`](configs/default.yaml) as a starting point for the available configuration options.
-
-### 6. Generate networks
-
-Run an experiment with:
-
-```bash
-python scripts/generate_network.py
-```
-
-Generated networks and experiment outputs are stored in:
-
-```text
-runs/
-```
-
-## Repository Structure
-
-```text
-MARS/
-├── configs/        # Experiment configuration files
-├── runs/           # Generated networks and experiment outputs
-├── scripts/        # Scripts for running experiments
-├── src/
-│   └── MARS/       # MARS source code
-└── pyproject.toml  # Package configuration and dependencies
-```
-
-## Model
-
-mars combines three structural components:
-
-* **Multiplexity** — networks consist of multiple affiliation layers.
-* **Spatial embedding** — nodes and affiliations are positioned in a metric space, allowing spatial proximity to influence affiliation formation.
-* **Affiliation-based structure** — social ties emerge through shared affiliations within each layer.
-
-The spatial freedom parameter controls the influence of spatial proximity on affiliation formation, allowing the model to range from strongly spatially constrained networks to increasingly space-independent networks.
-
-## Configuration
-
-Model parameters are specified in YAML configuration files. A configuration can define properties such as the network size, affiliation layers, spatial embedding, and parameters controlling network generation.
-
-See [`configs/default.yaml`](configs/default.yaml) for an example configuration.
-
-## Output
-
-Each experiment produces output under `runs/`. Depending on the experiment configuration, this can include generated network data and network-property results for subsequent analysis and visualization.
+The outputs of the notebooks are saved under `outputs/plots` and `outputs/tex`.
