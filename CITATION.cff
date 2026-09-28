@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use MARS in academic work, please cite it using the metadata below."
+title: "MARS: A framework for modelling register-based social networks"
+type: software
+version: "0.1.0"
+authors:
+  - family-names: Hamilton
+    given-names: Katherine
+    email: klh92@cam.ac.uk
+    affiliation: "Leiden University"
+  - family-names: Epure
+    given-names: Irina
+    affiliation: "Leiden University"
+  - family-names: Takes
+    given-names: Frank W.
+    affiliation: "Leiden University"
+license: MIT
+repository-code: "https://github.com/IrinaMonaEpure/MARS"
+abstract: "The Multiplex Affiliation-based Random Spatially-embedded (MARS) graph framework replicates the construction method of register-based social networks."
+keywords:
+  - register-based network
+  - spatial network
+  - random network model
+  - social network
+identifiers:
+  - type: doi
+    value: 10.48550/arXiv.2608.10946
+    description: "MARS: A framework for modelling register-based social networks (2026)"
