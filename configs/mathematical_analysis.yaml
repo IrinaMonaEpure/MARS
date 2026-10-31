@@ -15,6 +15,7 @@ metric_space:                                 # S
 embedding:
   nodes: uniform                           # X_V
   affiliations: uniform                       # X_A
+  std: 0.2
 
 connection:
   function: exponential_decay                 # gamma
